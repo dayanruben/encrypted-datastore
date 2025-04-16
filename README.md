@@ -1,8 +1,8 @@
 # Encrypted DataStore
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-blue.svg?logo=kotlin)](http://kotlinlang.org)
 [![Gradle](https://img.shields.io/badge/Gradle-8.13-blue?logo=gradle)](https://gradle.org)
-[![Version](https://img.shields.io/maven-central/v/com.dayanruben/encrypted-datastore?style=flat-square)][mavenCentral]
-[![License](https://img.shields.io/github/license/dayanruben/encrypted-datastore?style=flat-square)][license]
+[![Version](https://img.shields.io/maven-central/v/com.dayanruben/encrypted-datastore)][mavenCentral]
+[![License](https://img.shields.io/github/license/dayanruben/encrypted-datastore)][license]
 
 Extensions to store DataStore into `EncryptedFile`.
 
