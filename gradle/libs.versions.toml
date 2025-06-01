@@ -1,7 +1,7 @@
 [versions]
 
 encrypted-datastore = "0.3"
-kotlin = "2.1.21"
+kotlin = "1.9.23" # Downgraded for Compose Multiplatform compatibility
 tink = "1.17.0"
 androidx-datastore = "1.1.7"
 androidx-security-crypto = "1.0.0"
@@ -10,15 +10,19 @@ androidx-test-runner = "1.6.2"
 junit = "5.12.2"
 infrastructure = "0.19.1"
 mavenPublishPlugin = "0.32.0"
-android-gradlePlugin = "8.10.1"
+android-gradlePlugin = "8.2.0" # Downgraded for Kotlin compatibility
 binary-validator = "0.17.0"
+compose-multiplatform = "1.6.10" # Added Compose Multiplatform
+kotlinx-coroutines = "1.8.0" # Added kotlinx.coroutines
+kotlinx-serialization = "1.6.3" # Updated kotlinx.serialization
+ktor = "2.3.9" # Added Ktor
 
 # Sample
 core = "1.16.0"
 lifecycle = "2.9.0"
 activity = "1.10.1"
 compose-bom = "2025.05.01"
-kotlinx-serialization = "1.8.1"
+
 
 [libraries]
 
@@ -55,7 +59,14 @@ compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling
 compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" } # Added kotlinx-coroutines-core
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" } # Added Ktor client core
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" } # Added Ktor CIO engine (for JVM)
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" } # Added Ktor Darwin engine (for iOS)
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" } # Added Ktor OkHttp engine (for Android)
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" } # Added kotlin-test
 
 [plugins]
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+# kotlin-compose is replaced by compose-multiplatform
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" } # Added Compose Multiplatform plugin
