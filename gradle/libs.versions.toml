@@ -2,7 +2,7 @@
 
 encrypted-datastore = "0.3"
 kotlin = "2.1.21"
-tink = "1.17.0"
+tink = "1.18.0"
 androidx-datastore = "1.1.7"
 androidx-security-crypto = "1.0.0"
 androidx-test-core = "1.6.1"
