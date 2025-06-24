@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 
 internal fun Project.applyKotlinDefaults() {
     with(kotlinExtension) {
-        jvmToolchain(11)
+        jvmToolchain(21)
         explicitApi()
     }
 
