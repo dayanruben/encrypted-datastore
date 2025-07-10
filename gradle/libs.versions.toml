@@ -7,18 +7,18 @@ androidx-datastore = "1.1.7"
 androidx-security-crypto = "1.0.0"
 androidx-test-core = "1.6.1"
 androidx-test-runner = "1.6.2"
-junit = "5.13.1"
+junit = "5.13.3"
 infrastructure = "0.19.1"
 mavenPublishPlugin = "0.33.0"
-android-gradlePlugin = "8.10.1"
-binary-validator = "0.17.0"
+android-gradlePlugin = "8.11.0"
+binary-validator = "0.18.1"
 
 # Sample
 core = "1.16.0"
-lifecycle = "2.9.0"
+lifecycle = "2.9.1"
 activity = "1.10.1"
-compose-bom = "2025.05.01"
-kotlinx-serialization = "1.8.1"
+compose-bom = "2025.06.01"
+kotlinx-serialization = "1.9.0"
 
 [libraries]
 
