@@ -28,7 +28,7 @@ android {
     }
 }
 
-kotlin.jvmToolchain(11)
+kotlin.jvmToolchain(21)
 
 dependencies {
     implementation(libs.core)
