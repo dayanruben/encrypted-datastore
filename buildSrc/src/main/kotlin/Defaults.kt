@@ -23,8 +23,11 @@ internal fun LibraryExtension.applyAndroidDefaults() {
 
     buildFeatures {
         resValues = false
-        androidResources = false
         shaders = false
+    }
+
+    androidResources {
+        enable = false
     }
 
     lint {
