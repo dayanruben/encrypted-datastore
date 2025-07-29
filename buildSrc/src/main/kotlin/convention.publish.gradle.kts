@@ -1,4 +1,16 @@
 import com.redmadrobot.build.dsl.*
+import java.io.ByteArrayOutputStream
+
+fun Project.hasGpgKey(): Boolean {
+    val result = ByteArrayOutputStream()
+    exec {
+        commandLine("gpg", "--list-secret-keys")
+        standardOutput = result
+        errorOutput = result
+        isIgnoreExitValue = true
+    }
+    return result.toString().trim().isNotEmpty()
+}
 
 plugins {
     id("com.vanniktech.maven.publish")
@@ -7,12 +19,19 @@ plugins {
 }
 
 signing {
-    useGpgCmd()
+    if (hasGpgKey()) {
+        useGpgCmd()
+    } else {
+        logger.lifecycle("GPG key not available - signing will be skipped")
+    }
+    isRequired = hasGpgKey()
 }
 
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
+    if (hasGpgKey()) {
+        signAllPublications()
+    }
 
     coordinates(artifactId = project.name)
 
