@@ -16,7 +16,7 @@ internal fun Project.applyKotlinDefaults() {
 }
 
 internal fun LibraryExtension.applyAndroidDefaults() {
-    compileSdk = 35
+    compileSdk = 36
 
     // Min SDK should be aligned with min SDK in androidx.security:security-crypto
     defaultConfig.minSdk = 23

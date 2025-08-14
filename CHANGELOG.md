@@ -15,7 +15,7 @@ and to prepare the library for possible support for iOS target in the future.
 
 ### Housekeeping
 
-- Compile against Android SDK 35
+- Compile against Android SDK 36
 - Update dependencies in sample project
 - Drop usage of gradle-infrastructure plugins
 - Use `-Xfriendly-paths` compiler option to access internal entities from the androidx.datastore library, delete `PreferenceDataStoreHack`

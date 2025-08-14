@@ -1,5 +1,9 @@
 [versions]
 
+target-sdk = "36"
+compile-sdk = "36"
+min-sdk = "23"
+
 encrypted-datastore = "0.4"
 kotlin = "2.2.10"
 tink = "1.18.0"
