@@ -1,6 +1,6 @@
 # Encrypted DataStore
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-blue.svg?logo=kotlin)](http://kotlinlang.org)
-[![Gradle](https://img.shields.io/badge/Gradle-8.14.2-blue?logo=gradle)](https://gradle.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.20-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![Gradle](https://img.shields.io/badge/Gradle-9.0.0-blue?logo=gradle)](https://gradle.org)
 [![Version](https://img.shields.io/maven-central/v/com.dayanruben/encrypted-datastore)][mavenCentral]
 [![License](https://img.shields.io/github/license/dayanruben/encrypted-datastore)][license]
 
@@ -24,9 +24,9 @@ repositories {
 }
 
 dependencies {
-    implementation("com.dayanruben:security-crypto-datastore:1.1.7-0.3")
+    implementation("com.dayanruben:security-crypto-datastore:1.1.7-0.6")
     // Or, if you want to use Preferences DataStore:
-    implementation("com.dayanruben:security-crypto-datastore-preferences:1.1.7-0.3")
+    implementation("com.dayanruben:security-crypto-datastore-preferences:1.1.7-0.6")
 }
 ```
 
