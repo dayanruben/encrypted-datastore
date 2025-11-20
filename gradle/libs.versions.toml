@@ -5,7 +5,7 @@ compile-sdk = "36"
 min-sdk = "23"
 
 encrypted-datastore = "0.6"
-kotlin = "2.2.21"
+kotlin = "2.3.0-RC"
 tink = "1.19.0"
 androidx-datastore = "1.2.0"
 androidx-security-crypto = "1.1.0"
