@@ -13,7 +13,7 @@ androidx-test-core = "1.7.0"
 androidx-test-runner = "1.7.0"
 junit = "6.0.1"
 infrastructure = "0.19.1"
-mavenPublishPlugin = "0.34.0"
+mavenPublishPlugin = "0.35.0"
 android-gradlePlugin = "8.13.0"
 binary-validator = "0.18.1"
 
