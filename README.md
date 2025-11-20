@@ -1,6 +1,6 @@
 # Encrypted DataStore
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.20-blue.svg?logo=kotlin)](http://kotlinlang.org)
-[![Gradle](https://img.shields.io/badge/Gradle-9.0.0-blue?logo=gradle)](https://gradle.org)
+[![Kotlin](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fdayanruben%2Fencrypted-datastore%2Frefs%2Fheads%2Fmain%2Fgradle%2Flibs.versions.toml&query=versions.kotlin&prefix=v&logo=kotlin&label=Kotlin)](./gradle/libs.versions.toml)
+[![Gradle](https://img.shields.io/badge/Gradle-9.2.1-blue?logo=gradle)](https://gradle.org)
 [![Version](https://img.shields.io/maven-central/v/com.dayanruben/encrypted-datastore)][mavenCentral]
 [![License](https://img.shields.io/github/license/dayanruben/encrypted-datastore)][license]
 
