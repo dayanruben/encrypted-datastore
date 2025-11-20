@@ -6,7 +6,7 @@ min-sdk = "23"
 
 encrypted-datastore = "0.6"
 kotlin = "2.2.21"
-tink = "1.18.0"
+tink = "1.19.0"
 androidx-datastore = "1.1.7"
 androidx-security-crypto = "1.1.0"
 androidx-test-core = "1.7.0"
