@@ -1,6 +1,6 @@
 # Encrypted DataStore
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.20-blue.svg?logo=kotlin)](http://kotlinlang.org)
-[![Gradle](https://img.shields.io/badge/Gradle-9.0.0-blue?logo=gradle)](https://gradle.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.21-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![Gradle](https://img.shields.io/badge/Gradle-9.2.0-blue?logo=gradle)](https://gradle.org)
 [![Version](https://img.shields.io/maven-central/v/com.dayanruben/encrypted-datastore)][mavenCentral]
 [![License](https://img.shields.io/github/license/dayanruben/encrypted-datastore)][license]
 
@@ -24,16 +24,16 @@ repositories {
 }
 
 dependencies {
-    implementation("com.dayanruben:security-crypto-datastore:1.1.7-0.6")
+    implementation("com.dayanruben:security-crypto-datastore:1.2.0-0.6")
     // Or, if you want to use Preferences DataStore:
-    implementation("com.dayanruben:security-crypto-datastore-preferences:1.1.7-0.6")
+    implementation("com.dayanruben:security-crypto-datastore-preferences:1.2.0-0.6")
 }
 ```
 
 > **Dependencies:**
 > - `security-crypto` [1.0.0](https://developer.android.com/jetpack/androidx/releases/security#1.0.0)
-> - `datastore` [1.1.7](https://developer.android.com/jetpack/androidx/releases/datastore#1.1.7)
-> - `tink` [1.18.0](https://github.com/tink-crypto/tink-java/releases/tag/v1.18.0)
+> - `datastore` [1.2.0](https://developer.android.com/jetpack/androidx/releases/datastore#1.2.0)
+> - `tink` [1.19.0](https://github.com/tink-crypto/tink-java/releases/tag/v1.19.0)
 
 > [!NOTE]
 > Ensure that the version of this library aligns with the DataStore library version used in your project.
