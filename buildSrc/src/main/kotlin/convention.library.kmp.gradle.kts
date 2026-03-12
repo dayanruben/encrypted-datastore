@@ -1,4 +1,5 @@
 import internal.libs
+import internal.catalogVersion
 import defaultKmpAndroidNamespace
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -13,8 +14,8 @@ extensions.configure<KotlinMultiplatformExtension>("kotlin") {
     jvm()
     android {
         namespace = project.defaultKmpAndroidNamespace()
-        compileSdk = 36
-        minSdk = 23
+        compileSdk = project.catalogVersion("compile-sdk").toInt()
+        minSdk = project.catalogVersion("min-sdk").toInt()
         withHostTestBuilder {}
 
         lint {

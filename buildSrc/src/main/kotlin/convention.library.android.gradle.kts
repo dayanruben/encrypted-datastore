@@ -8,7 +8,7 @@ plugins {
 
 applyKotlinDefaults()
 extensions.configure<LibraryExtension>("android") {
-    applyAndroidDefaults()
+    applyAndroidDefaults(project)
 }
 
 dependencies {

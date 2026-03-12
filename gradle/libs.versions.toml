@@ -1,8 +1,10 @@
 [versions]
 
+gradle = "9.4.0"
 target-sdk = "36"
 compile-sdk = "36"
 min-sdk = "23"
+jvm-toolchain = "21"
 
 encrypted-datastore = "0.7"
 kotlin = "2.3.10"
@@ -13,7 +15,7 @@ androidx-test-core = "1.7.0"
 androidx-test-runner = "1.7.0"
 junit = "6.0.3"
 infrastructure = "0.20.1"
-mavenPublishPlugin = "0.35.0"
+mavenPublishPlugin = "0.36.0"
 android-gradlePlugin = "9.1.0"
 binary-validator = "0.18.1"
 
