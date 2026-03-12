@@ -7,10 +7,6 @@ plugins {
 
 description = "Extensions to encrypt DataStore Preferences using Tink"
 
-android {
-    namespace = "$group.datastore.encrypted.preferences"
-}
-
 kotlin.sourceSets {
     commonJvmMain.dependencies {
         api(projects.encryptedDatastore)
@@ -24,7 +20,7 @@ kotlin.sourceSets {
 // Make internal declarations from `datastore-preferences-core` accessible for this module
 tasks.withType<KotlinJvmCompile>().configureEach {
     val datastoreLibrary = project.provider {
-        libraries.first { it.name.startsWith("datastore-preferences-core") }.absoluteFile
+        libraries.firstOrNull { it.name.startsWith("datastore-preferences-core") }?.absoluteFile
     }
-    friendPaths.from(datastoreLibrary)
+    datastoreLibrary.orNull?.let { friendPaths.from(it) }
 }

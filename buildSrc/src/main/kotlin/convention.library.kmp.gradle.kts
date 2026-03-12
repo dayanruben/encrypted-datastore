@@ -1,30 +1,53 @@
 import internal.libs
+import defaultKmpAndroidNamespace
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.gradle.kotlin.dsl.configure
 
 plugins {
     kotlin("multiplatform")
-    id("com.android.library")
+    id("com.android.kotlin.multiplatform.library")
 }
 
-kotlin {
+extensions.configure<KotlinMultiplatformExtension>("kotlin") {
     jvm()
-    androidTarget()
+    android {
+        namespace = project.defaultKmpAndroidNamespace()
+        compileSdk = 36
+        minSdk = 23
+        withHostTestBuilder {}
 
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    applyDefaultHierarchyTemplate {
-        common {
-            group("commonJvm") {
-                withAndroidTarget()
-                withJvm()
-            }
+        lint {
+            checkDependencies = true
+            abortOnError = true
+            warningsAsErrors = true
         }
     }
 
     sourceSets {
+        val commonJvmMain by creating {
+            dependsOn(commonMain.get())
+        }
+        val commonJvmTest by creating {
+            dependsOn(commonTest.get())
+        }
+
+        named("androidMain") {
+            dependsOn(commonJvmMain)
+        }
+        named("androidHostTest") {
+            dependsOn(commonJvmTest)
+        }
+        named("jvmMain") {
+            dependsOn(commonJvmMain)
+        }
         commonMain.dependencies {
             api(project.dependencies.platform(project(":encrypted-datastore-bom")))
         }
-        named("commonJvmTest").dependencies {
+        named("jvmTest") {
+            dependsOn(commonJvmTest)
+        }
+        commonJvmTest.dependencies {
             implementation(kotlin("test", version = libs.versions.kotlin.get()))
             implementation(project.dependencies.platform(libs.junit.bom))
             implementation(libs.junit.jupiter)
@@ -33,4 +56,4 @@ kotlin {
 }
 
 applyKotlinDefaults()
-android.applyAndroidDefaults()
+

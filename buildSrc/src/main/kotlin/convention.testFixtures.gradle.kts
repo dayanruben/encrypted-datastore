@@ -1,5 +1,7 @@
-import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.internal.lint.*
+import defaultKmpAndroidNamespace
+import org.gradle.kotlin.dsl.configure
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 plugins {
     id("convention.library.kmp") apply false
@@ -12,21 +14,13 @@ plugins.withId("convention.library.kmp") {
     with(testFixturesProject) {
         plugins.apply("convention.library.kmp")
 
-        androidComponents.finalizeDsl {
-            val parentAndroid = thisProject.extensions.getByName<CommonExtension<*, *, *, *, *, *>>("android")
-            val parentNamespace = checkNotNull(parentAndroid.namespace) {
-                "Please specify 'android.namespace' in the project '${thisProject.path}'"
-            }
-            it.namespace = "$parentNamespace.testFixtures"
-        }
-
         // Disable most of the Lint tasks for the test fixtures project
         tasks.withType<AndroidLintAnalysisTask>().configureEach { enabled = false }
         tasks.withType<AndroidLintTask>().configureEach { enabled = false }
         tasks.withType<AndroidLintTextOutputTask>().configureEach { enabled = false }
         tasks.withType<LintModelWriterTask>().configureEach { enabled = false }
 
-        kotlin {
+        extensions.configure<KotlinMultiplatformExtension>("kotlin") {
             explicitApi = null
 
             sourceSets {
@@ -37,13 +31,9 @@ plugins.withId("convention.library.kmp") {
         }
     }
 
-    kotlin {
+    extensions.configure<KotlinMultiplatformExtension>("kotlin") {
         sourceSets {
             commonTest.dependencies {
-                implementation(testFixturesProject)
-            }
-
-            androidInstrumentedTest.dependencies {
                 implementation(testFixturesProject)
             }
         }

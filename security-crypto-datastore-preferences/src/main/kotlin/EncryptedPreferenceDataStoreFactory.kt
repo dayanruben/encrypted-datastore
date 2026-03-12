@@ -1,4 +1,4 @@
-@file:Suppress("UnusedReceiverParameter")
+@file:Suppress("UnusedReceiverParameter", "RestrictedApi")
 
 package com.dayanruben.security.crypto
 

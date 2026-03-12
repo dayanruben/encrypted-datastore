@@ -1,6 +1,5 @@
 plugins {
     com.android.application
-    org.jetbrains.kotlin.android
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.kotlin.compose)
 }
