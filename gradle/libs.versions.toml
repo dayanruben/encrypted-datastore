@@ -14,7 +14,7 @@ androidx-test-runner = "1.7.0"
 junit = "6.0.3"
 infrastructure = "0.20.1"
 mavenPublishPlugin = "0.35.0"
-android-gradlePlugin = "8.13.2"
+android-gradlePlugin = "9.1.0"
 binary-validator = "0.18.1"
 
 # Sample
