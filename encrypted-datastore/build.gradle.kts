@@ -1,3 +1,6 @@
+import org.gradle.kotlin.dsl.configure
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+
 plugins {
     convention.library.kmp
     convention.publish
@@ -5,10 +8,6 @@ plugins {
 }
 
 description = "Extensions to encrypt DataStore using Tink"
-
-android {
-    namespace = "$group.datastore.encrypted"
-}
 
 kotlin.sourceSets {
     commonJvmMain.dependencies {

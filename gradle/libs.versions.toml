@@ -1,28 +1,30 @@
 [versions]
 
+gradle = "9.4.0"
 target-sdk = "36"
 compile-sdk = "36"
 min-sdk = "23"
+jvm-toolchain = "21"
 
-encrypted-datastore = "0.7"
+encrypted-datastore = "0.8"
 kotlin = "2.3.20-RC3"
 tink = "1.20.0"
-androidx-datastore = "1.2.0"
+androidx-datastore = "1.2.1"
 androidx-security-crypto = "1.1.0"
 androidx-test-core = "1.7.0"
 androidx-test-runner = "1.7.0"
-junit = "6.0.1"
-infrastructure = "0.19.1"
-mavenPublishPlugin = "0.35.0"
-android-gradlePlugin = "8.13.2"
+junit = "6.0.3"
+infrastructure = "0.20.1"
+mavenPublishPlugin = "0.36.0"
+android-gradlePlugin = "9.1.0"
 binary-validator = "0.18.1"
 
 # Sample
-core = "1.17.0"
+core = "1.18.0"
 lifecycle = "2.10.0"
-activity = "1.12.1"
-compose-bom = "2025.12.00"
-kotlinx-serialization = "1.9.0"
+activity = "1.13.0"
+compose-bom = "2026.03.00"
+kotlinx-serialization = "1.10.0"
 
 [libraries]
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

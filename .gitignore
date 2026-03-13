@@ -7,6 +7,10 @@
 local.properties
 build/
 !**/src/**/build/
+gradle-debug.log
 
 # Kotlin
 .kotlin
+
+# Junie
+.junie

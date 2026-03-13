@@ -1,9 +1,12 @@
+import org.gradle.api.artifacts.VersionCatalogsExtension
+
 plugins {
     com.android.application
-    org.jetbrains.kotlin.android
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.kotlin.compose)
 }
+
+val libsCatalog = extensions.getByType(VersionCatalogsExtension::class.java).named("libs")
 
 android {
     namespace = "com.example.sample"
@@ -28,7 +31,7 @@ android {
     }
 }
 
-kotlin.jvmToolchain(21)
+kotlin.jvmToolchain(libsCatalog.findVersion("jvm-toolchain").get().requiredVersion.toInt())
 
 dependencies {
     implementation(libs.core)
