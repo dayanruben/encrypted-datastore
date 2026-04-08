@@ -3,9 +3,11 @@ name: Publish
 on:
     release:
         types: [created]
+    workflow_dispatch:
 
 jobs:
   build:
+    if: github.repository == 'osipxd/encrypted-datastore'
     name: Publish to Maven Central
     runs-on: ubuntu-latest
 
