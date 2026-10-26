@@ -1,6 +1,6 @@
 # Encrypted DataStore
 [![Kotlin](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fdayanruben%2Fencrypted-datastore%2Frefs%2Fheads%2Fmain%2Fgradle%2Flibs.versions.toml&query=versions.kotlin&prefix=v&logo=kotlin&label=Kotlin)](./gradle/libs.versions.toml)
-[![Gradle](https://img.shields.io/badge/Gradle-9.4.0-blue?logo=gradle)](https://gradle.org)
+[![Gradle](https://img.shields.io/badge/Gradle-9.8.2-blue?logo=gradle)](https://gradle.org)
 [![Version](https://img.shields.io/maven-central/v/com.dayanruben/encrypted-datastore)][mavenCentral]
 [![License](https://img.shields.io/github/license/dayanruben/encrypted-datastore)][license]
 
@@ -8,8 +8,8 @@ Extensions to store DataStore into `EncryptedFile`.
 
 > [!WARNING]
 > Special thanks to the original [author](https://github.com/osipxd) for laying the foundation of this [repository](https://github.com/osipxd/encrypted-datastore), your work continues to inspire.
-> This library will continue to be maintained, but active development will cease when an official DataStore encryption solution is released by Google.
-> Support the development of this feature by voting for it on the issue tracker: [b/167697691](https://issuetracker.google.com/issues/167697691).
+> DataStore 1.3.0 now provides official AEAD encryption through `androidx.datastore:datastore-tink` and `AeadSerializer`.
+> Existing users can continue using this library for streaming encryption and legacy encrypted files. Switching from `StreamingAead` to the official AEAD serializer requires an explicit data migration; the ciphertext formats are different.
 
 ---
 
@@ -24,16 +24,18 @@ repositories {
 }
 
 dependencies {
-    implementation("com.dayanruben:security-crypto-datastore:1.2.1-0.9")
+    implementation("com.dayanruben:security-crypto-datastore:1.3.0-0.10")
     // Or, if you want to use Preferences DataStore:
-    implementation("com.dayanruben:security-crypto-datastore-preferences:1.2.1-0.9")
+    implementation("com.dayanruben:security-crypto-datastore-preferences:1.3.0-0.10")
 }
 ```
 
+> **Android requirements:** minSdk 24; compileSdk 37 or newer.
+
 > **Dependencies:**
 > - `security-crypto` [1.1.0](https://developer.android.com/jetpack/androidx/releases/security#1.1.0)
-> - `datastore` [1.2.1](https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1)
-> - `tink` [1.20.0](https://github.com/tink-crypto/tink-java/releases/tag/v1.20.0)
+> - `datastore` [1.3.0](https://developer.android.com/jetpack/androidx/releases/datastore#1.3.0)
+> - `tink` [1.24.0](https://github.com/tink-crypto/tink-java/releases/tag/v1.24.0)
 
 > [!NOTE]
 > Ensure that the version of this library aligns with the DataStore library version used in your project.

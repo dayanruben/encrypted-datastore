@@ -1,5 +1,26 @@
 ## [Unreleased]
 
+## [1.3.0-0.10] – 2026.10.26
+
+### Dependencies
+
+- Migrate to AndroidX DataStore 1.3.0; retain the existing AEAD and StreamingAead formats and public APIs.
+- Kotlin 2.4.21, Tink 1.24.0, Gradle 9.8.2, Android Gradle Plugin 9.4.1, and JUnit 6.1.3.
+- Maven Publish plugin 0.37.0 and binary compatibility validator 0.18.2.
+- Update sample dependencies to their latest stable releases.
+
+### Build and publication
+
+- Resolve Preferences serializer friend paths lazily and update Gradle source-set configuration.
+- Update GitHub Actions, validate the sample APK in CI, and enable Maven Central publication for this fork.
+
+### Migration
+
+- Android now requires API 24 or newer, matching DataStore 1.3.0. Compile against SDK 37 for the updated AndroidX dependencies.
+- DataStore 1.3.0 includes official `datastore-tink` AEAD encryption. It is not a drop-in replacement for this library's StreamingAead files; keep the existing serializer or migrate the data explicitly.
+
+## Historical development notes
+
 ### Publish `encrypted-datastore` as KMP library
 
 As `security-crypto-datastore` artifacts are going to be deprecated,
