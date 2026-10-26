@@ -22,5 +22,5 @@ tasks.withType<KotlinJvmCompile>().configureEach {
     val datastoreLibrary = project.provider {
         libraries.firstOrNull { it.name.startsWith("datastore-preferences-core") }?.absoluteFile
     }
-    datastoreLibrary.orNull?.let { friendPaths.from(it) }
+    friendPaths.from(datastoreLibrary)
 }

@@ -26,10 +26,10 @@ extensions.configure<KotlinMultiplatformExtension>("kotlin") {
     }
 
     sourceSets {
-        val commonJvmMain by creating {
+        val commonJvmMain = create("commonJvmMain") {
             dependsOn(commonMain.get())
         }
-        val commonJvmTest by creating {
+        val commonJvmTest = create("commonJvmTest") {
             dependsOn(commonTest.get())
         }
 

@@ -20,7 +20,7 @@ internal fun Project.applyKotlinDefaults() {
 internal fun LibraryExtension.applyAndroidDefaults(project: Project) {
     compileSdk = project.catalogVersion("compile-sdk").toInt()
 
-    // Min SDK should be aligned with min SDK in androidx.security:security-crypto
+    // Align with the minimum SDK required by AndroidX DataStore 1.3.0.
     defaultConfig.minSdk = project.catalogVersion("min-sdk").toInt()
 
     buildFeatures {
