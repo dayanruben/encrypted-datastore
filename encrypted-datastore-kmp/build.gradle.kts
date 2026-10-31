@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
+
 plugins {
     convention.library.kmp
     convention.publish
@@ -17,7 +20,13 @@ kotlin {
         }
     }
     iosArm64()
-    iosSimulatorArm64()
+    iosSimulatorArm64 {
+        binaries.withType<TestExecutable>().configureEach {
+            // The simulator Security framework reads this test-only section (KT-61470).
+            linkerOpts("-sectcreate", "__TEXT", "__entitlements",
+                project.file("src/appleTest/resources/entitlements.plist").absolutePath)
+        }
+    }
     macosArm64()
 
     sourceSets {
@@ -46,4 +55,9 @@ kotlin {
             named("${target}Test") { dependsOn(appleTest) }
         }
     }
+}
+
+tasks.withType<KotlinNativeSimulatorTest>().configureEach {
+    standalone.set(false)
+    device.set(providers.gradleProperty("iosSimulatorDevice").orElse("booted"))
 }
