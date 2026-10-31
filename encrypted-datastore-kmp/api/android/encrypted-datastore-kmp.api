@@ -1,0 +1,73 @@
+public final class com/dayanruben/datastore/encrypted/kmp/AndroidKeystoreCipherKt {
+	public static final fun createAndroidKeystoreCipher (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun openAndroidKeystoreCipher (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/dayanruben/datastore/encrypted/kmp/AuthenticationException : com/dayanruben/datastore/encrypted/kmp/EncryptionException {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public abstract interface class com/dayanruben/datastore/encrypted/kmp/DataStoreCipher {
+	public abstract fun decrypt ([B[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun encrypt ([B[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/dayanruben/datastore/encrypted/kmp/DataStoreCipherKt {
+	public static final fun aesGcmCipher ([BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/dayanruben/datastore/encrypted/kmp/EncryptedDataStoreFactoryKt {
+	public static final fun createEncryptedDataStore (Landroidx/datastore/core/okio/OkioSerializer;Lcom/dayanruben/datastore/encrypted/kmp/DataStoreCipher;Ljava/lang/String;Lokio/Path;Lkotlinx/coroutines/CoroutineScope;Lokio/FileSystem;Ljava/util/List;I)Landroidx/datastore/core/DataStore;
+	public static final fun createEncryptedDataStore (Lcom/dayanruben/datastore/encrypted/kmp/RecordSerializer;Lcom/dayanruben/datastore/encrypted/kmp/DataStoreCipher;Ljava/lang/String;Lokio/Path;Lkotlinx/coroutines/CoroutineScope;Lokio/FileSystem;Ljava/util/List;I)Landroidx/datastore/core/DataStore;
+	public static synthetic fun createEncryptedDataStore$default (Landroidx/datastore/core/okio/OkioSerializer;Lcom/dayanruben/datastore/encrypted/kmp/DataStoreCipher;Ljava/lang/String;Lokio/Path;Lkotlinx/coroutines/CoroutineScope;Lokio/FileSystem;Ljava/util/List;IILjava/lang/Object;)Landroidx/datastore/core/DataStore;
+	public static synthetic fun createEncryptedDataStore$default (Lcom/dayanruben/datastore/encrypted/kmp/RecordSerializer;Lcom/dayanruben/datastore/encrypted/kmp/DataStoreCipher;Ljava/lang/String;Lokio/Path;Lkotlinx/coroutines/CoroutineScope;Lokio/FileSystem;Ljava/util/List;IILjava/lang/Object;)Landroidx/datastore/core/DataStore;
+	public static final fun createEncryptedPreferencesDataStore (Lcom/dayanruben/datastore/encrypted/kmp/DataStoreCipher;Ljava/lang/String;Lokio/Path;Lkotlinx/coroutines/CoroutineScope;Lokio/FileSystem;Ljava/util/List;I)Landroidx/datastore/core/DataStore;
+	public static synthetic fun createEncryptedPreferencesDataStore$default (Lcom/dayanruben/datastore/encrypted/kmp/DataStoreCipher;Ljava/lang/String;Lokio/Path;Lkotlinx/coroutines/CoroutineScope;Lokio/FileSystem;Ljava/util/List;IILjava/lang/Object;)Landroidx/datastore/core/DataStore;
+}
+
+public final class com/dayanruben/datastore/encrypted/kmp/EncryptedOkioSerializerKt {
+	public static final fun encrypted (Landroidx/datastore/core/okio/OkioSerializer;Lcom/dayanruben/datastore/encrypted/kmp/DataStoreCipher;Ljava/lang/String;I)Landroidx/datastore/core/okio/OkioSerializer;
+	public static final fun encrypted (Lcom/dayanruben/datastore/encrypted/kmp/RecordSerializer;Lcom/dayanruben/datastore/encrypted/kmp/DataStoreCipher;Ljava/lang/String;I)Landroidx/datastore/core/okio/OkioSerializer;
+	public static synthetic fun encrypted$default (Landroidx/datastore/core/okio/OkioSerializer;Lcom/dayanruben/datastore/encrypted/kmp/DataStoreCipher;Ljava/lang/String;IILjava/lang/Object;)Landroidx/datastore/core/okio/OkioSerializer;
+	public static synthetic fun encrypted$default (Lcom/dayanruben/datastore/encrypted/kmp/RecordSerializer;Lcom/dayanruben/datastore/encrypted/kmp/DataStoreCipher;Ljava/lang/String;IILjava/lang/Object;)Landroidx/datastore/core/okio/OkioSerializer;
+}
+
+public class com/dayanruben/datastore/encrypted/kmp/EncryptionException : java/io/IOException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/dayanruben/datastore/encrypted/kmp/KeyStorageException : com/dayanruben/datastore/encrypted/kmp/EncryptionException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getStatus ()Ljava/lang/Integer;
+}
+
+public final class com/dayanruben/datastore/encrypted/kmp/PayloadTooLargeException : com/dayanruben/datastore/encrypted/kmp/EncryptionException {
+	public fun <init> (I)V
+	public final fun getMaxPlaintextBytes ()I
+}
+
+public abstract interface class com/dayanruben/datastore/encrypted/kmp/RecordSerializer {
+	public abstract fun getDefaultValue ()Ljava/lang/Object;
+	public abstract fun readFrom (Lokio/BufferedSource;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun writeTo (Ljava/lang/Object;Lcom/dayanruben/datastore/encrypted/kmp/RecordWriter;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class com/dayanruben/datastore/encrypted/kmp/RecordWriter {
+	public abstract fun getRemainingBytes ()I
+	public abstract fun write ([BII)V
+	public static synthetic fun write$default (Lcom/dayanruben/datastore/encrypted/kmp/RecordWriter;[BIIILjava/lang/Object;)V
+	public abstract fun writeUtf8 (Ljava/lang/String;)V
+}
+
+public final class com/dayanruben/datastore/encrypted/kmp/RecordWriter$DefaultImpls {
+	public static synthetic fun write$default (Lcom/dayanruben/datastore/encrypted/kmp/RecordWriter;[BIIILjava/lang/Object;)V
+}
+
+public final class com/dayanruben/datastore/encrypted/kmp/UnsupportedFormatException : com/dayanruben/datastore/encrypted/kmp/EncryptionException {
+	public fun <init> ()V
+}
+

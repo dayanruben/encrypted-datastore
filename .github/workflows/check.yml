@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Check
@@ -25,3 +28,48 @@ jobs:
 
       - name: Check
         run: ./gradlew check :sample:assembleDebug :security-crypto-datastore:assembleRelease :security-crypto-datastore-preferences:assembleRelease
+
+  native:
+    name: Apple native and ABI checks
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-java@v6.1.0
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+      - uses: gradle/actions/setup-gradle@v6.4.0
+      - name: Prepare full iOS simulator
+        run: python3 scripts/ios_simulator.py create
+      - name: Native tests, API and artifacts
+        run: >-
+          ./gradlew :encrypted-datastore-kmp:macosArm64Test
+          :encrypted-datastore-kmp:iosSimulatorArm64Test
+          :encrypted-datastore-kmp:compileKotlinIosArm64
+          :encrypted-datastore-kmp:apiCheck :encrypted-datastore-kmp:assemble
+          -PiosSimulatorDevice="$(python3 scripts/ios_simulator.py id)"
+      - name: Remove only the test simulator
+        if: always()
+        run: python3 scripts/ios_simulator.py destroy
+
+  android-keystore:
+    name: Android Keystore integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-java@v6.1.0
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+      - uses: gradle/actions/setup-gradle@v6.4.0
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2.38.0
+        with:
+          api-level: 35
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew :encrypted-datastore-kmp:connectedAndroidDeviceTest

@@ -4,7 +4,7 @@
 [![Version](https://img.shields.io/maven-central/v/com.dayanruben/encrypted-datastore)][mavenCentral]
 [![License](https://img.shields.io/github/license/dayanruben/encrypted-datastore)][license]
 
-Extensions to store DataStore into `EncryptedFile`.
+Authenticated settings storage for Kotlin Multiplatform, with compatibility APIs for existing Android/JVM encrypted files.
 
 > [!WARNING]
 > Special thanks to the original [author](https://github.com/osipxd) for laying the foundation of this [repository](https://github.com/osipxd/encrypted-datastore), your work continues to inspire.
@@ -13,7 +13,43 @@ Extensions to store DataStore into `EncryptedFile`.
 
 ---
 
+## Kotlin Multiplatform (unreleased)
+
+The new `encrypted-datastore-kmp` module supports Android, JVM, iOS ARM64, iOS ARM64 simulator, and macOS ARM64. It uses native AES-256-GCM providers, a versioned authenticated record, public AndroidX Okio APIs, and explicit platform key creation/opening. Existing modules and ciphertext formats remain compatible.
+
+This module has **not been published**. While developing from this repository, use:
+
+```kotlin
+commonMain.dependencies {
+    implementation(project(":encrypted-datastore-kmp"))
+}
+```
+
+Create Preferences storage in shared Kotlin code, supplying a persisted cipher, a private absolute path ending in `.preferences_pb`, and a background scope owned by the application:
+
+```kotlin
+import com.dayanruben.datastore.encrypted.kmp.*
+import kotlinx.coroutines.CoroutineScope
+import okio.Path
+
+fun openSettings(cipher: DataStoreCipher, path: Path, scope: CoroutineScope) =
+    createEncryptedPreferencesDataStore(
+        cipher = cipher,
+        storeId = "application.settings.v1",
+        path = path,
+        scope = scope,
+    )
+```
+
+On Android, provision once with `createAndroidKeystoreCipher(alias)` and reopen with `openAndroidKeystoreCipher(alias)`. On Apple platforms, use `createAppleKeychainCipher(service, account, accessGroup)` and `openAppleKeychainCipher(service, account, accessGroup)` with the exact entitled group, including its signing prefix. On JVM, `aesGcmCipher(key)` imports a 32-byte key from the application's secure key management. Never recreate keys automatically after an open failure.
+
+The default serialized limit is 1 MiB; `maxPlaintextBytes` accepts `1..16_777_216`. The portable API authenticates a complete bounded record before deserialization. Typed `RecordSerializer` writes are checked before adapter buffering. Existing Okio serializers and Preferences use a compatibility bridge: the record limit does not cap their encoding/buffering allocations, so bound application values before storing them. Large streaming files can continue using the existing Tink API below. The new format requires an explicit migration from legacy files; keep the old path and keys until the migrated file has been reopened successfully.
+
+See [KMP usage and security](docs/kmp-security.md), [validation and benchmark evidence](docs/kmp-validation.md), and the [implementation plan](docs/superpowers/plans/2026-10-30-kotlin-multiplatform.md). Apple binary consumers should apply the [provider's Swift linker configuration](https://whyoleg.github.io/cryptography-kotlin/getting-started/troubleshooting/xcode-compatibility/) when Xcode uses a nonstandard path.
+
 ## Installation
+
+The following coordinates are the released Android/JVM compatibility APIs.
 
 Add the dependency:
 

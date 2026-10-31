@@ -9,6 +9,7 @@ fun NamedDomainObjectProvider<KotlinSourceSet>.dependencies(
 
 fun Project.defaultKmpAndroidNamespace(): String = when (path) {
     ":encrypted-datastore" -> "$group.datastore.encrypted"
+    ":encrypted-datastore-kmp" -> "$group.datastore.encrypted.kmp"
     ":encrypted-datastore-preferences" -> "$group.datastore.encrypted.preferences"
     ":encrypted-datastore:testFixtures" -> "$group.datastore.encrypted.testFixtures"
     else -> error("Please configure the Android namespace for KMP project '$path'")

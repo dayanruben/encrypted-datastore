@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+### Multiplatform
+
+- Add `encrypted-datastore-kmp` for Android, JVM, iOS ARM64/simulator, and macOS ARM64, preserving existing coordinates and ciphertext formats.
+- Add authenticated AES-256-GCM Okio serialization, stable store identity binding, bounded typed writes, and typed failures that do not trigger corruption replacement.
+- Add RecordSerializer/RecordWriter for writes checked before buffering, an Okio compatibility bridge, and typed/Preferences factories using public AndroidX APIs and caller-owned coroutine scopes. The compatibility bridge limits accepted records without capping upstream encoding/buffering allocations.
+- Add explicit Android Keystore and Apple device-only Keychain creation/opening bound to an explicit entitled access group, plus JVM key import.
+- Add JVM/native/Android integration suites, Android and Native API gates, an opt-in benchmark, native CI, and Apple-hosted complete KMP publication.
+
+### Fixes
+
+- Decrypt legacy AEAD streams correctly when `InputStream.available()` reports zero before EOF.
+- Snapshot streaming associated data so caller mutation cannot change an existing serializer's authentication context.
+
+The new artifact is unreleased; the existing published `1.3.0-0.10` coordinates have not changed.
+
 ## [1.3.0-0.10] – 2026.10.26
 
 ### Dependencies
