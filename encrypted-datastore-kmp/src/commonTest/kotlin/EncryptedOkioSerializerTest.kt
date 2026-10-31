@@ -104,6 +104,21 @@ class EncryptedOkioSerializerTest {
     }
 
     @Test
+    fun defaultLimitAllowsOneMiBAndRejectsOneByteMore() = runTest {
+        val cipher = aesGcmCipher(ByteArray(32))
+        val serializer = BytesSerializer.encrypted(cipher, "settings")
+        val payload = ByteArray(1_048_576) { it.toByte() }
+        val output = Buffer()
+        serializer.writeTo(payload, output)
+        assertEquals(1_048_610L, output.size)
+        assertContentEquals(payload, serializer.readFrom(output))
+        assertFailsWith<PayloadTooLargeException> { serializer.writeTo(ByteArray(1_048_577), output) }
+        assertEquals(0L, output.size)
+        BytesSerializer.encrypted(cipher, "settings", 1_048_577).writeTo(ByteArray(1_048_577), output)
+        assertFailsWith<PayloadTooLargeException> { serializer.readFrom(output) }
+    }
+
+    @Test
     fun neverEndingSourceStopsAtTheBound() = runTest {
         var upstreamBytes = 0L
         val endless = object : Source {

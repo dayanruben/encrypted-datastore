@@ -26,7 +26,7 @@ import okio.buffer
 public fun <T> OkioSerializer<T>.encrypted(
     cipher: DataStoreCipher,
     storeId: String,
-    maxPlaintextBytes: Int = 1_048_576,
+    maxPlaintextBytes: Int = DEFAULT_MAX_PLAINTEXT_BYTES,
 ): OkioSerializer<T> {
     require(storeId.isNotBlank()) { "storeId must not be blank" }
     val identity = storeId.encodeToByteArray(throwOnInvalidSequence = true)
@@ -35,6 +35,8 @@ public fun <T> OkioSerializer<T>.encrypted(
     val aad = Buffer().write(RECORD_HEADER).writeInt(identity.size).write(identity).readByteArray()
     return EncryptedOkioSerializer(this, cipher, aad, maxPlaintextBytes)
 }
+
+internal const val DEFAULT_MAX_PLAINTEXT_BYTES = 1_048_576
 
 private val RECORD_HEADER = byteArrayOf(0x45, 0x44, 0x53, 0x4b, 1, 1)
 private const val RECORD_OVERHEAD = 34

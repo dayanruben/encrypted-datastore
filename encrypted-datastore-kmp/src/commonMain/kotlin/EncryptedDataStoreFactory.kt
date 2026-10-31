@@ -29,7 +29,7 @@ public fun <T> createEncryptedDataStore(
     scope: CoroutineScope,
     fileSystem: FileSystem = systemFileSystem(),
     migrations: List<DataMigration<T>> = emptyList(),
-    maxPlaintextBytes: Int = 1_048_576,
+    maxPlaintextBytes: Int = DEFAULT_MAX_PLAINTEXT_BYTES,
 ): DataStore<T> {
     require(path.isAbsolute) { "Encrypted DataStore requires an absolute path" }
     val normalizedPath = path.normalized()
@@ -56,7 +56,7 @@ public fun createEncryptedPreferencesDataStore(
     scope: CoroutineScope,
     fileSystem: FileSystem = systemFileSystem(),
     migrations: List<DataMigration<Preferences>> = emptyList(),
-    maxPlaintextBytes: Int = 1_048_576,
+    maxPlaintextBytes: Int = DEFAULT_MAX_PLAINTEXT_BYTES,
 ): DataStore<Preferences> {
     require(path.isAbsolute) { "Encrypted DataStore requires an absolute path" }
     require(path.name.substringAfterLast('.', "") == "preferences_pb") {
