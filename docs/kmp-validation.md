@@ -23,13 +23,13 @@ Agent-initiated Gradle commands ran through the standalone compact-output wrappe
 
 | New module suite | Executed tests | Failures/errors/skips |
 | --- | ---: | --- |
-| JVM | 32 | 0 / 0 / 0 |
-| Android host | 28 | 0 / 0 / 0 |
-| macOS ARM64 | 28 | 0 / 0 / 0 |
-| iOS ARM64 full simulator | 33 | 0 / 0 / 0 |
-| Android API 35 device/emulator | 33 | 0 / 0 / 0 |
+| JVM | 39 | 0 / 0 / 0 |
+| Android host | 33 | 0 / 0 / 0 |
+| macOS ARM64 | 33 | 0 / 0 / 0 |
+| iOS ARM64 full simulator | 40 | 0 / 0 / 0 |
+| Android API 35 device/emulator | 38 | 0 / 0 / 0 |
 
-These are 154 test executions across targets, including shared tests repeated on each provider/runtime. The five iOS Keychain tests and five Android Keystore tests exercised actual platform storage. Independent AES-256-GCM known-answer decryption runs in the shared suite. The suite also covers nonce freshness, concurrency, every record byte, truncation, wrong key/identity, a prefix-only reader, bounded infinite sources/serializers, exact 1 MiB default behavior, stream ownership, IO/cancellation, transactional reopen, injected write/atomic-move failures, migrations, and all Preferences value types.
+These are 183 test executions across targets, including shared tests repeated on each provider/runtime. The seven iOS Keychain tests and five Android Keystore tests exercised actual platform storage. Independent AES-256-GCM known-answer decryption runs in the shared suite. The suite also covers nonce freshness, concurrency, every record byte, truncation, wrong key/identity, a prefix-only reader, bounded infinite sources/serializers, bulk-write allocation rejection, exact 1 MiB default behavior, stream ownership, IO/cancellation, transactional reopen, injected write/atomic-move failures, migrations, and all Preferences value types.
 
 Legacy JVM and Android host suites also passed: `encrypted-datastore` has 8 test cases per host with its fixture-regeneration test intentionally ignored; `encrypted-datastore-preferences` has 2 cases per host with regeneration ignored. Checked-in `testAssets/` has no diff. The two legacy regressions were observed failing before their fixes: zero `available()` on a nonempty AEAD stream, and mutation of the caller's streaming associated data.
 
@@ -41,11 +41,11 @@ Generated POM/Gradle module metadata and API dumps were inspected. Every adverti
 
 All new KMP publications and the BOM were staged into a private filesystem Maven repository under `build/kmp-verification-repo`. Only the temporary verification harness disabled signing; these were unsigned local test artifacts. No artifact was sent to an external publication service.
 
-A separate KMP consumer resolved those Maven artifacts and passed:
+A separate KMP consumer refreshed and resolved the updated Maven artifacts after both review fixes and passed:
 
-- Common metadata compilation using both public factories and their default arguments.
+- Common metadata compilation using both typed serializer overloads, the Preferences factory, and their default arguments.
 - Android compilation importing the public Keystore API.
-- Physical iOS and simulator compilation importing the public Apple Keychain API.
+- Physical iOS and simulator compilation importing the public Apple Keychain API with an explicit access group.
 - JVM encrypted persistence/reopen and cipher roundtrip (2 tests).
 - macOS native cipher roundtrip against the staged KLIB (1 test).
 
@@ -55,17 +55,29 @@ GitHub workflows passed `actionlint`. They now define Ubuntu project checks, API
 
 ## Host benchmark
 
-Run `./gradlew :encrypted-datastore-kmp:benchmark`. The opt-in executable warms each case, validates full roundtrips, measures latency percentiles/throughput and current-thread JVM allocation, and writes `encrypted-datastore-kmp/build/reports/benchmarks/encrypted-datastore.csv`. It runs with a 256 MiB heap and imports one key outside the timed region. Each measurement includes bounded serialization, encryption, authenticated read, and comparison of all plaintext bytes; file IO and key storage are excluded.
+Run `./gradlew :encrypted-datastore-kmp:benchmark`. The opt-in executable warms each case, validates full roundtrips, measures latency percentiles/throughput and current-thread JVM allocation, and writes `encrypted-datastore-kmp/build/reports/benchmarks/encrypted-datastore.csv`. It runs with a 256 MiB heap and imports one key outside the timed region. Each measurement uses RecordSerializer and includes bounded serialization, encryption, authenticated read, and comparison of all plaintext bytes; file IO and key storage are excluded.
 
 Observed with OpenJDK 21.0.11, macOS ARM64, and SunJCE:
 
 | Plaintext | Measured iterations | p50 | p95 | Roundtrip throughput | Allocated bytes/roundtrip |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 1 KiB | 500 | 43.46 us | 65.67 us | 20.70 MiB/s | 10,433 |
-| 64 KiB | 200 | 326.13 us | 366.54 us | 191.47 MiB/s | 470,386 |
-| 1 MiB | 50 | 4.75 ms | 5.70 ms | 219.73 MiB/s | 10,321,407 |
+| 1 KiB | 500 | 46.38 us | 91.92 us | 18.16 MiB/s | 10,473 |
+| 64 KiB | 200 | 342.50 us | 459.71 us | 174.10 MiB/s | 470,426 |
+| 1 MiB | 50 | 4.58 ms | 5.49 ms | 227.74 MiB/s | 10,321,537 |
 
 Allocation is cumulative per operation, not peak retained memory. Throughput counts plaintext bytes per complete roundtrip. These are host measurements with warmup/JIT/GC effects, not physical-device or filesystem latency claims. CI has no wall-clock threshold; exact record overhead and resource-limit tests provide deterministic regression gates. The implementation holds/copies one bounded record rather than streaming it.
+
+
+## Final review and regression evidence
+
+A fresh-context reviewer examined the whole branch after implementation. Both important findings were reproduced with failing tests and fixed in one pass; no critical findings or deferred minors remain.
+
+- Buffering before the write limit: ordinary Okio bulk/direct-buffer writes can allocate before the underlying sink sees them. The preferred typed API now uses RecordSerializer/RecordWriter without exposing a backing buffer. Bulk byte-array and UTF-8 tests failed before implementation. A mutation that restored a buffered intermediate allocated 16,829,400 bytes while rejecting a caller-owned 16 MiB argument at a 64-byte budget; the allocation regression failed. With the strict writer restored, all JVM tests passed. Separate tests preserve the Okio bridge's direct-buffer, outputStream, ByteBuffer, and charset behavior, and prevent a swallowed limit failure from publishing a suffix. The Okio/Preferences bridge explicitly does not promise a write-memory cap.
+- Apple lookup identity: unscoped queries could search a different entitled group from the default creation group. Two real simulator tests failed before filtering by accessGroup. Explicit group queries now preserve independent keys for equal service/account pairs in two entitled groups and reject lookup in the wrong group. Both tests and the other five Keychain tests pass.
+
+After these fixes, the full project gate passed again (managed Gradle run 51), API dumps and the bounded-writer benchmark passed (run 50), and updated artifacts were staged (run 52). All 183 new-module test executions passed with zero skips. The separate-consumer refresh passed (run 53): common/Android/physical-iOS/simulator compilation, 2 JVM tests and 1 macOS test validate the final public APIs and artifacts rather than earlier staged output.
+
+The [execution decisions](kmp-decisions.md) record scope choices, costs, and every boundary the reviewer declined to judge.
 
 ## Environment and acceptance boundaries
 
