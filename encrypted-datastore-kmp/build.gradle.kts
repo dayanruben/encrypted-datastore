@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
+import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
 
 plugins {
@@ -60,4 +61,14 @@ kotlin {
 tasks.withType<KotlinNativeSimulatorTest>().configureEach {
     standalone.set(false)
     device.set(providers.gradleProperty("iosSimulatorDevice").orElse("booted"))
+}
+
+val benchmarkCompilation = kotlin.targets.getByName<KotlinJvmTarget>("jvm").compilations.getByName("test")
+tasks.register<JavaExec>("benchmark") {
+    group = "verification"
+    description = "Measures authenticated settings record roundtrips; no timing thresholds"
+    dependsOn(benchmarkCompilation.compileTaskProvider)
+    mainClass.set("com.dayanruben.datastore.encrypted.kmp.EncryptedDataStoreBenchmark")
+    classpath(benchmarkCompilation.output.allOutputs, benchmarkCompilation.runtimeDependencyFiles)
+    jvmArgs("-Xms256m", "-Xmx256m")
 }
