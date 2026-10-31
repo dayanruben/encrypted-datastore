@@ -27,7 +27,7 @@ public fun <T> createEncryptedDataStore(
     storeId: String,
     path: Path,
     scope: CoroutineScope,
-    fileSystem: FileSystem = FileSystem.SYSTEM,
+    fileSystem: FileSystem = systemFileSystem(),
     migrations: List<DataMigration<T>> = emptyList(),
     maxPlaintextBytes: Int = 1_048_576,
 ): DataStore<T> {
@@ -54,7 +54,7 @@ public fun createEncryptedPreferencesDataStore(
     storeId: String,
     path: Path,
     scope: CoroutineScope,
-    fileSystem: FileSystem = FileSystem.SYSTEM,
+    fileSystem: FileSystem = systemFileSystem(),
     migrations: List<DataMigration<Preferences>> = emptyList(),
     maxPlaintextBytes: Int = 1_048_576,
 ): DataStore<Preferences> {
