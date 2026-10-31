@@ -14,13 +14,16 @@ import platform.Security.*
  * Explicitly provisions a random AES-256 key in the Apple data-protection Keychain.
  *
  * Items are nonsynchronizing and accessible only while unlocked on this device. An existing
- * [service]/[account] is never overwritten. Signed applications need valid Keychain entitlements;
+ * [service]/[account]/[accessGroup] identity is never overwritten. [accessGroup] must be the exact
+ * entitled group, including its signing prefix. Both creation and lookup use that same identity;
+ * neither searches other entitled groups. Signed applications need valid Keychain entitlements;
  * missing entitlements and locked storage fail with [KeyStorageException.status]. This is not a
  * Secure Enclave AES key: the key is imported into process memory while the cipher is alive.
  * Cancellation can occur after the item is persisted; use [openAppleKeychainCipher] on retry.
  */
-public suspend fun createAppleKeychainCipher(service: String, account: String): DataStoreCipher {
+public suspend fun createAppleKeychainCipher(service: String, account: String, accessGroup: String): DataStoreCipher {
     validateKeyIdentity(service, account)
+    require(accessGroup.isNotBlank()) { "Keychain access group must not be blank" }
     return withContext(Dispatchers.IO) {
         val key = ByteArray(32)
         try {
@@ -29,7 +32,7 @@ public suspend fun createAppleKeychainCipher(service: String, account: String): 
             }
             if (randomStatus != errSecSuccess) throw KeyStorageException("Secure key generation failed", randomStatus)
             val cipher = aesGcmCipher(key)
-            withKeychainQuery(service, account) { query ->
+            withKeychainQuery(service, account, accessGroup) { query ->
                 val data = key.usePinned {
                     CFDataCreate(null, it.addressOf(0).reinterpret(), key.size.convert())
                 } ?: throw KeyStorageException("DataStore key allocation failed")
@@ -50,10 +53,11 @@ public suspend fun createAppleKeychainCipher(service: String, account: String): 
 }
 
 /** Opens an existing Keychain key. A missing, locked, or inaccessible item is never recreated. */
-public suspend fun openAppleKeychainCipher(service: String, account: String): DataStoreCipher {
+public suspend fun openAppleKeychainCipher(service: String, account: String, accessGroup: String): DataStoreCipher {
     validateKeyIdentity(service, account)
+    require(accessGroup.isNotBlank()) { "Keychain access group must not be blank" }
     return withContext(Dispatchers.IO) {
-        val key = readKeychainKey(service, account)
+        val key = readKeychainKey(service, account, accessGroup)
         try { aesGcmCipher(key) } finally { key.fill(0) }
     }
 }
@@ -63,8 +67,8 @@ private fun validateKeyIdentity(service: String, account: String) {
     require(account.isNotBlank()) { "Keychain account must not be blank" }
 }
 
-private fun readKeychainKey(service: String, account: String): ByteArray =
-    withKeychainQuery(service, account) { query ->
+private fun readKeychainKey(service: String, account: String, accessGroup: String): ByteArray =
+    withKeychainQuery(service, account, accessGroup) { query ->
         CFDictionarySetValue(query, kSecReturnData, kCFBooleanTrue)
         CFDictionarySetValue(query, kSecMatchLimit, kSecMatchLimitOne)
         CFDictionarySetValue(query, kSecUseAuthenticationUI, kSecUseAuthenticationUIFail)
@@ -85,21 +89,24 @@ private fun readKeychainKey(service: String, account: String): ByteArray =
         }
     }
 
-private fun <T> withKeychainQuery(service: String, account: String, block: (CFMutableDictionaryRef) -> T): T {
+private fun <T> withKeychainQuery(service: String, account: String, accessGroup: String, block: (CFMutableDictionaryRef) -> T): T {
     val query = CFDictionaryCreateMutable(null, 0, kCFTypeDictionaryKeyCallBacks.ptr, kCFTypeDictionaryValueCallBacks.ptr)
         ?: throw KeyStorageException("DataStore key query allocation failed")
     val nativeService = CFBridgingRetain(service)!!
     val nativeAccount = CFBridgingRetain(account)!!
+    val nativeGroup = CFBridgingRetain(accessGroup)!!
     try {
         CFDictionarySetValue(query, kSecClass, kSecClassGenericPassword)
         CFDictionarySetValue(query, kSecAttrService, nativeService)
         CFDictionarySetValue(query, kSecAttrAccount, nativeAccount)
+        CFDictionarySetValue(query, kSecAttrAccessGroup, nativeGroup)
         CFDictionarySetValue(query, kSecAttrSynchronizable, kCFBooleanFalse)
         CFDictionarySetValue(query, kSecUseDataProtectionKeychain, kCFBooleanTrue)
         return block(query)
     } finally {
         CFRelease(nativeService)
         CFRelease(nativeAccount)
+        CFRelease(nativeGroup)
         CFRelease(query)
     }
 }

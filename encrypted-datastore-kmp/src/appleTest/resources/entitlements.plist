@@ -9,6 +9,7 @@
     <key>keychain-access-groups</key>
     <array>
         <string>com.dayanruben.encrypted-datastore.tests</string>
+        <string>com.dayanruben.encrypted-datastore.tests.shared</string>
     </array>
 </dict>
 </plist>

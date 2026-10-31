@@ -30,8 +30,13 @@ kotlin {
     iosSimulatorArm64 {
         binaries.withType<TestExecutable>().configureEach {
             // The simulator Security framework reads this test-only section (KT-61470).
+            val entitlements = project.layout.projectDirectory.file("src/appleTest/resources/entitlements.plist")
             linkerOpts("-sectcreate", "__TEXT", "__entitlements",
-                project.file("src/appleTest/resources/entitlements.plist").absolutePath)
+                entitlements.asFile.absolutePath)
+            linkTaskProvider.configure {
+                inputs.file(entitlements).withPropertyName("keychainTestEntitlements")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+            }
         }
     }
     macosArm64()
