@@ -6,9 +6,25 @@
 // - Show declarations: true
 
 // Library unique name: <com.dayanruben:encrypted-datastore-kmp>
+abstract interface <#A: kotlin/Any?> com.dayanruben.datastore.encrypted.kmp/RecordSerializer { // com.dayanruben.datastore.encrypted.kmp/RecordSerializer|null[0]
+    abstract val defaultValue // com.dayanruben.datastore.encrypted.kmp/RecordSerializer.defaultValue|{}defaultValue[0]
+        abstract fun <get-defaultValue>(): #A // com.dayanruben.datastore.encrypted.kmp/RecordSerializer.defaultValue.<get-defaultValue>|<get-defaultValue>(){}[0]
+
+    abstract suspend fun readFrom(okio/BufferedSource): #A // com.dayanruben.datastore.encrypted.kmp/RecordSerializer.readFrom|readFrom(okio.BufferedSource){}[0]
+    abstract suspend fun writeTo(#A, com.dayanruben.datastore.encrypted.kmp/RecordWriter) // com.dayanruben.datastore.encrypted.kmp/RecordSerializer.writeTo|writeTo(1:0;com.dayanruben.datastore.encrypted.kmp.RecordWriter){}[0]
+}
+
 abstract interface com.dayanruben.datastore.encrypted.kmp/DataStoreCipher { // com.dayanruben.datastore.encrypted.kmp/DataStoreCipher|null[0]
     abstract suspend fun decrypt(kotlin/ByteArray, kotlin/ByteArray): kotlin/ByteArray // com.dayanruben.datastore.encrypted.kmp/DataStoreCipher.decrypt|decrypt(kotlin.ByteArray;kotlin.ByteArray){}[0]
     abstract suspend fun encrypt(kotlin/ByteArray, kotlin/ByteArray): kotlin/ByteArray // com.dayanruben.datastore.encrypted.kmp/DataStoreCipher.encrypt|encrypt(kotlin.ByteArray;kotlin.ByteArray){}[0]
+}
+
+abstract interface com.dayanruben.datastore.encrypted.kmp/RecordWriter { // com.dayanruben.datastore.encrypted.kmp/RecordWriter|null[0]
+    abstract val remainingBytes // com.dayanruben.datastore.encrypted.kmp/RecordWriter.remainingBytes|{}remainingBytes[0]
+        abstract fun <get-remainingBytes>(): kotlin/Int // com.dayanruben.datastore.encrypted.kmp/RecordWriter.remainingBytes.<get-remainingBytes>|<get-remainingBytes>(){}[0]
+
+    abstract fun write(kotlin/ByteArray, kotlin/Int = ..., kotlin/Int = ...) // com.dayanruben.datastore.encrypted.kmp/RecordWriter.write|write(kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
+    abstract fun writeUtf8(kotlin/String) // com.dayanruben.datastore.encrypted.kmp/RecordWriter.writeUtf8|writeUtf8(kotlin.String){}[0]
 }
 
 final class com.dayanruben.datastore.encrypted.kmp/AuthenticationException : com.dayanruben.datastore.encrypted.kmp/EncryptionException { // com.dayanruben.datastore.encrypted.kmp/AuthenticationException|null[0]
@@ -38,7 +54,9 @@ open class com.dayanruben.datastore.encrypted.kmp/EncryptionException : okio/IOE
 }
 
 final fun <#A: kotlin/Any?> (androidx.datastore.core.okio/OkioSerializer<#A>).com.dayanruben.datastore.encrypted.kmp/encrypted(com.dayanruben.datastore.encrypted.kmp/DataStoreCipher, kotlin/String, kotlin/Int = ...): androidx.datastore.core.okio/OkioSerializer<#A> // com.dayanruben.datastore.encrypted.kmp/encrypted|encrypted@androidx.datastore.core.okio.OkioSerializer<0:0>(com.dayanruben.datastore.encrypted.kmp.DataStoreCipher;kotlin.String;kotlin.Int){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (com.dayanruben.datastore.encrypted.kmp/RecordSerializer<#A>).com.dayanruben.datastore.encrypted.kmp/encrypted(com.dayanruben.datastore.encrypted.kmp/DataStoreCipher, kotlin/String, kotlin/Int = ...): androidx.datastore.core.okio/OkioSerializer<#A> // com.dayanruben.datastore.encrypted.kmp/encrypted|encrypted@com.dayanruben.datastore.encrypted.kmp.RecordSerializer<0:0>(com.dayanruben.datastore.encrypted.kmp.DataStoreCipher;kotlin.String;kotlin.Int){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> com.dayanruben.datastore.encrypted.kmp/createEncryptedDataStore(androidx.datastore.core.okio/OkioSerializer<#A>, com.dayanruben.datastore.encrypted.kmp/DataStoreCipher, kotlin/String, okio/Path, kotlinx.coroutines/CoroutineScope, okio/FileSystem = ..., kotlin.collections/List<androidx.datastore.core/DataMigration<#A>> = ..., kotlin/Int = ...): androidx.datastore.core/DataStore<#A> // com.dayanruben.datastore.encrypted.kmp/createEncryptedDataStore|createEncryptedDataStore(androidx.datastore.core.okio.OkioSerializer<0:0>;com.dayanruben.datastore.encrypted.kmp.DataStoreCipher;kotlin.String;okio.Path;kotlinx.coroutines.CoroutineScope;okio.FileSystem;kotlin.collections.List<androidx.datastore.core.DataMigration<0:0>>;kotlin.Int){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> com.dayanruben.datastore.encrypted.kmp/createEncryptedDataStore(com.dayanruben.datastore.encrypted.kmp/RecordSerializer<#A>, com.dayanruben.datastore.encrypted.kmp/DataStoreCipher, kotlin/String, okio/Path, kotlinx.coroutines/CoroutineScope, okio/FileSystem = ..., kotlin.collections/List<androidx.datastore.core/DataMigration<#A>> = ..., kotlin/Int = ...): androidx.datastore.core/DataStore<#A> // com.dayanruben.datastore.encrypted.kmp/createEncryptedDataStore|createEncryptedDataStore(com.dayanruben.datastore.encrypted.kmp.RecordSerializer<0:0>;com.dayanruben.datastore.encrypted.kmp.DataStoreCipher;kotlin.String;okio.Path;kotlinx.coroutines.CoroutineScope;okio.FileSystem;kotlin.collections.List<androidx.datastore.core.DataMigration<0:0>>;kotlin.Int){0§<kotlin.Any?>}[0]
 final fun com.dayanruben.datastore.encrypted.kmp/createEncryptedPreferencesDataStore(com.dayanruben.datastore.encrypted.kmp/DataStoreCipher, kotlin/String, okio/Path, kotlinx.coroutines/CoroutineScope, okio/FileSystem = ..., kotlin.collections/List<androidx.datastore.core/DataMigration<androidx.datastore.preferences.core/Preferences>> = ..., kotlin/Int = ...): androidx.datastore.core/DataStore<androidx.datastore.preferences.core/Preferences> // com.dayanruben.datastore.encrypted.kmp/createEncryptedPreferencesDataStore|createEncryptedPreferencesDataStore(com.dayanruben.datastore.encrypted.kmp.DataStoreCipher;kotlin.String;okio.Path;kotlinx.coroutines.CoroutineScope;okio.FileSystem;kotlin.collections.List<androidx.datastore.core.DataMigration<androidx.datastore.preferences.core.Preferences>>;kotlin.Int){}[0]
 final suspend fun com.dayanruben.datastore.encrypted.kmp/aesGcmCipher(kotlin/ByteArray): com.dayanruben.datastore.encrypted.kmp/DataStoreCipher // com.dayanruben.datastore.encrypted.kmp/aesGcmCipher|aesGcmCipher(kotlin.ByteArray){}[0]
 final suspend fun com.dayanruben.datastore.encrypted.kmp/createAppleKeychainCipher(kotlin/String, kotlin/String): com.dayanruben.datastore.encrypted.kmp/DataStoreCipher // com.dayanruben.datastore.encrypted.kmp/createAppleKeychainCipher|createAppleKeychainCipher(kotlin.String;kotlin.String){}[0]

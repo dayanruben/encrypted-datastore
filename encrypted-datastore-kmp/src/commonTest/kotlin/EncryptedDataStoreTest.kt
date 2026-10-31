@@ -1,7 +1,6 @@
 package com.dayanruben.datastore.encrypted.kmp
 
 import androidx.datastore.core.DataMigration
-import androidx.datastore.core.okio.OkioSerializer
 import kotlinx.coroutines.async
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitAll
@@ -12,7 +11,6 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import okio.BufferedSink
 import okio.ForwardingFileSystem
 import okio.IOException
 import okio.Path
@@ -54,9 +52,9 @@ class EncryptedDataStoreTest {
         withStoreFiles {
             val cipher = aesGcmCipher(ByteArray(32))
             val failure = IOException("test write failure")
-            val serializer = object : OkioSerializer<String> by Utf8Serializer {
-                override suspend fun writeTo(t: String, sink: BufferedSink) {
-                    sink.writeUtf8(t)
+            val serializer = object : RecordSerializer<String> by Utf8Serializer {
+                override suspend fun writeTo(t: String, writer: RecordWriter) {
+                    writer.writeUtf8(t)
                     if (t == "fail") throw failure
                 }
             }

@@ -7,33 +7,75 @@ import okio.Buffer
 import okio.BufferedSink
 import okio.BufferedSource
 import okio.IOException
-import okio.Sink
-import okio.Timeout
 import okio.buffer
 
 /**
- * Adds a versioned, authenticated AES-256-GCM record around this serializer.
+ * Adds a versioned, authenticated AES-256-GCM record around an existing Okio serializer.
  *
  * [storeId] must be a stable, nonblank identity of at most 1024 UTF-8 bytes. Changing it makes
  * previous records unreadable. It binds ciphertext to its logical store, independently of its path.
- * [maxPlaintextBytes] bounds serialized settings, defaults to 1 MiB, and must be in 1..16 MiB.
+ * [maxPlaintextBytes] bounds accepted serialized records, defaults to 1 MiB, and must be in 1..16 MiB.
  * Existing empty files and unsupported/unauthenticated records fail without returning defaults.
  *
  * This format is distinct from the legacy Tink formats. No implicit migration or plaintext
  * fallback occurs. One complete bounded record is authenticated before any bytes reach the delegate.
  * The source/sink supplied by DataStore remains caller-owned and is never closed by this adapter.
+ *
+ * This compatibility bridge must supply Okio's sealed BufferedSink implementation. Its bulk writes
+ * and direct buffer access may allocate beyond the record limit before rejection. The delegate's
+ * own allocations are also outside the limit. Use [RecordSerializer] for bounded adapter writes.
  */
 public fun <T> OkioSerializer<T>.encrypted(
     cipher: DataStoreCipher,
     storeId: String,
     maxPlaintextBytes: Int = DEFAULT_MAX_PLAINTEXT_BYTES,
 ): OkioSerializer<T> {
+    val delegate = this
+    return encryptedSerializer(
+        default = { delegate.defaultValue },
+        read = { delegate.readFrom(it) },
+        write = { value, writer ->
+            val buffered = writer.buffer()
+            try { delegate.writeTo(value, buffered); buffered.flush() } finally { buffered.buffer.clear() }
+        },
+        cipher, storeId, maxPlaintextBytes,
+    )
+}
+
+/**
+ * Encrypts immutable settings with the same format as the Okio bridge, checking each plaintext write
+ * before buffering it. [RecordWriter] exposes no backing buffer. Serializer-private allocations are
+ * outside this adapter's budget. The source/sink lifecycle and authentication contract match [encrypted].
+ */
+public fun <T> RecordSerializer<T>.encrypted(
+    cipher: DataStoreCipher,
+    storeId: String,
+    maxPlaintextBytes: Int = DEFAULT_MAX_PLAINTEXT_BYTES,
+): OkioSerializer<T> {
+    val delegate = this
+    return encryptedSerializer(
+        default = { delegate.defaultValue },
+        read = { delegate.readFrom(it) },
+        write = { value, writer -> delegate.writeTo(value, writer) },
+        cipher, storeId, maxPlaintextBytes,
+    )
+}
+
+private fun <T> encryptedSerializer(
+    default: () -> T,
+    read: suspend (BufferedSource) -> T,
+    write: suspend (T, BoundedRecordWriter) -> Unit,
+    cipher: DataStoreCipher,
+    storeId: String,
+    maxPlaintextBytes: Int,
+): OkioSerializer<T> {
+    require(storeId.length <= 1024) { "storeId must be at most 1024 UTF-8 bytes" }
     require(storeId.isNotBlank()) { "storeId must not be blank" }
     val identity = storeId.encodeToByteArray(throwOnInvalidSequence = true)
     require(identity.size <= 1024) { "storeId must be at most 1024 UTF-8 bytes" }
     require(maxPlaintextBytes in 1..16_777_216) { "maxPlaintextBytes must be in 1..16777216" }
     val aad = Buffer().write(RECORD_HEADER).writeInt(identity.size).write(identity).readByteArray()
-    return EncryptedOkioSerializer(this, cipher, aad, maxPlaintextBytes)
+    return EncryptedOkioSerializer(default, read, write, cipher, aad, maxPlaintextBytes)
 }
 
 internal const val DEFAULT_MAX_PLAINTEXT_BYTES = 1_048_576
@@ -43,12 +85,14 @@ private const val RECORD_OVERHEAD = 34
 private const val CIPHER_OVERHEAD = 28
 
 private class EncryptedOkioSerializer<T>(
-    private val delegate: OkioSerializer<T>,
+    private val default: () -> T,
+    private val read: suspend (BufferedSource) -> T,
+    private val write: suspend (T, BoundedRecordWriter) -> Unit,
     private val cipher: DataStoreCipher,
     private val associatedData: ByteArray,
     private val maxPlaintextBytes: Int,
 ) : OkioSerializer<T> {
-    override val defaultValue: T get() = delegate.defaultValue
+    override val defaultValue: T get() = default()
 
     override suspend fun readFrom(source: BufferedSource): T {
         currentCoroutineContext().ensureActive()
@@ -62,7 +106,7 @@ private class EncryptedOkioSerializer<T>(
             if (plaintext.size > maxPlaintextBytes) throw PayloadTooLargeException(maxPlaintextBytes)
             currentCoroutineContext().ensureActive()
             decoded.write(plaintext)
-            return delegate.readFrom(decoded)
+            return read(decoded)
         } finally {
             plaintext.fill(0)
             decoded.clear()
@@ -71,13 +115,11 @@ private class EncryptedOkioSerializer<T>(
 
     override suspend fun writeTo(t: T, sink: BufferedSink) {
         currentCoroutineContext().ensureActive()
-        val serialized = Buffer()
-        val bounded = LimitedSink(serialized, maxPlaintextBytes).buffer()
+        val bounded = BoundedRecordWriter(maxPlaintextBytes)
         var plaintext: ByteArray? = null
         try {
-            delegate.writeTo(t, bounded)
-            bounded.flush()
-            plaintext = serialized.readByteArray()
+            write(t, bounded)
+            plaintext = bounded.readBytes()
             val encrypted = cipher.encrypt(plaintext, associatedData)
             if (encrypted.size != plaintext.size + CIPHER_OVERHEAD) {
                 throw EncryptionException("DataStore cipher returned an invalid record length")
@@ -87,8 +129,7 @@ private class EncryptedOkioSerializer<T>(
             sink.write(encrypted)
         } finally {
             plaintext?.fill(0)
-            bounded.buffer.clear()
-            serialized.clear()
+            bounded.clear()
         }
     }
 
@@ -108,14 +149,4 @@ private class EncryptedOkioSerializer<T>(
             buffer.clear()
         }
     }
-}
-
-private class LimitedSink(private val destination: Buffer, private val maxBytes: Int) : Sink {
-    override fun write(source: Buffer, byteCount: Long) {
-        if (byteCount > maxBytes.toLong() - destination.size) throw PayloadTooLargeException(maxBytes)
-        destination.write(source, byteCount)
-    }
-    override fun flush(): Unit = Unit
-    override fun close(): Unit = Unit
-    override fun timeout(): Timeout = Timeout.NONE
 }

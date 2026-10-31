@@ -20,6 +20,8 @@ import okio.Path
  * immutable type. Missing files return its default; existing invalid ciphertext is never replaced.
  * Supply a stable [storeId] and the same persisted key when reopening. No plaintext/legacy fallback
  * or destructive corruption handler is installed. This format differs from the legacy Tink API.
+ * This overload preserves arbitrary Okio serializers; their buffering can exceed the record limit.
+ * Use the [RecordSerializer] overload for bounded adapter writes.
  */
 public fun <T> createEncryptedDataStore(
     serializer: OkioSerializer<T>,
@@ -31,12 +33,40 @@ public fun <T> createEncryptedDataStore(
     migrations: List<DataMigration<T>> = emptyList(),
     maxPlaintextBytes: Int = DEFAULT_MAX_PLAINTEXT_BYTES,
 ): DataStore<T> {
+    return createTypedStore(serializer.encrypted(cipher, storeId, maxPlaintextBytes), path, scope, fileSystem, migrations)
+}
+
+/**
+ * Creates a typed encrypted DataStore whose plaintext writes are checked before adapter buffering.
+ * Serializer-private allocations remain the serializer's responsibility. File/key/identity and
+ * lifetime requirements match the Okio overload of [createEncryptedDataStore].
+ */
+public fun <T> createEncryptedDataStore(
+    serializer: RecordSerializer<T>,
+    cipher: DataStoreCipher,
+    storeId: String,
+    path: Path,
+    scope: CoroutineScope,
+    fileSystem: FileSystem = systemFileSystem(),
+    migrations: List<DataMigration<T>> = emptyList(),
+    maxPlaintextBytes: Int = DEFAULT_MAX_PLAINTEXT_BYTES,
+): DataStore<T> {
+    return createTypedStore(serializer.encrypted(cipher, storeId, maxPlaintextBytes), path, scope, fileSystem, migrations)
+}
+
+private fun <T> createTypedStore(
+    serializer: OkioSerializer<T>,
+    path: Path,
+    scope: CoroutineScope,
+    fileSystem: FileSystem,
+    migrations: List<DataMigration<T>>,
+): DataStore<T> {
     require(path.isAbsolute) { "Encrypted DataStore requires an absolute path" }
     val normalizedPath = path.normalized()
     return DataStoreFactory.create(
         storage = OkioStorage(
             fileSystem = fileSystem,
-            serializer = serializer.encrypted(cipher, storeId, maxPlaintextBytes),
+            serializer = serializer,
             producePath = { normalizedPath },
         ),
         migrations = migrations,
@@ -48,6 +78,8 @@ public fun <T> createEncryptedDataStore(
  * Creates encrypted Preferences with the same key, identity, limit and lifetime contract as
  * [createEncryptedDataStore]. [path] must end in `.preferences_pb`. The public AndroidX Preferences
  * factory freezes values after each update to prevent mutations outside a transaction.
+ * Its upstream serializer uses the Okio bridge: the limit caps accepted records, not its encoding
+ * allocations or buffered writes. Applications must bound preference values before storing them.
  */
 public fun createEncryptedPreferencesDataStore(
     cipher: DataStoreCipher,
