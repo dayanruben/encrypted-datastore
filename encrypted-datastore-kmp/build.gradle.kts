@@ -25,6 +25,7 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.coroutines.test)
+            implementation(libs.okio.fakefilesystem)
         }
         commonJvmTest.dependencies {
             implementation(kotlin("test-junit5"))
