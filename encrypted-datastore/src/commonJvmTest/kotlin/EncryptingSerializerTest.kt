@@ -52,6 +52,19 @@ internal class EncryptingSerializerTest {
         assertContentEquals(plaintext, AlwaysOpenStreamSerializer.encrypted(aead).readFrom(source))
     }
 
+    @Test
+    fun `streaming associated data is snapshotted at construction`() = runBlocking {
+        val associatedData = "settings".toByteArray()
+        val originalData = associatedData.copyOf()
+        val serializer = AlwaysOpenStreamSerializer.encrypted(streamingAead, associatedData)
+        val plaintext = byteArrayOf(1, 2, 3)
+        val first = ByteArrayOutputStream().also { serializer.writeTo(plaintext, it) }.toByteArray()
+        associatedData.fill(0)
+        assertContentEquals(plaintext, serializer.readFrom(first.inputStream()))
+        val second = ByteArrayOutputStream().also { serializer.writeTo(plaintext, it) }.toByteArray()
+        assertContentEquals(plaintext, streamingAead.newDecryptingStream(second.inputStream(), originalData).use { it.readBytes() })
+    }
+
     private object AlwaysOpenStreamSerializer : Serializer<ByteArray> {
         override val defaultValue: ByteArray = byteArrayOf()
         override suspend fun readFrom(input: InputStream): ByteArray = input.readBytes()

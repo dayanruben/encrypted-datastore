@@ -80,9 +80,10 @@ public fun <T> Serializer<T>.encrypted(aead: Aead): EncryptingSerializer<T> =
 
 internal class StreamingAeadEncryptingSerializer<T>(
     private val streamingAead: StreamingAead,
-    private val associatedData: ByteArray,
+    associatedData: ByteArray,
     override val delegate: Serializer<T>,
 ) : WrappingEncryptingSerializer<T>() {
+    private val associatedData = associatedData.copyOf()
 
     override suspend fun readEncryptedFrom(input: InputStream): T {
         return try {
