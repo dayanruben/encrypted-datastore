@@ -19,6 +19,7 @@ dependencyResolutionManagement {
 
 include(
     ":encrypted-datastore-bom",
+    ":encrypted-datastore-kmp",
     ":encrypted-datastore",
     ":encrypted-datastore:testFixtures",
     ":encrypted-datastore-preferences",

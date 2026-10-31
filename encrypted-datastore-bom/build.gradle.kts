@@ -7,6 +7,7 @@ description = "Encryted DataStore BOM"
 
 dependencies {
     constraints {
+        api(projects.encryptedDatastoreKmp)
         api(projects.encryptedDatastore)
         api(projects.encryptedDatastorePreferences)
         api(projects.securityCryptoDatastore)

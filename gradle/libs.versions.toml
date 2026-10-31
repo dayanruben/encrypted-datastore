@@ -18,6 +18,9 @@ infrastructure = "0.20.1"
 mavenPublishPlugin = "0.37.0"
 android-gradlePlugin = "9.4.1"
 binary-validator = "0.18.2"
+cryptography = "0.6.0"
+okio = "3.17.0"
+coroutines = "1.11.0"
 
 # Sample
 core = "1.19.1"
@@ -27,6 +30,12 @@ compose-bom = "2026.09.00"
 kotlinx-serialization = "1.12.0"
 
 [libraries]
+
+cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
+cryptography-provider-optimal = { module = "dev.whyoleg.cryptography:cryptography-provider-optimal", version.ref = "cryptography" }
+okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", version.ref = "okio" }
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+androidx-datastore-core-okio = { module = "androidx.datastore:datastore-core-okio", version.ref = "androidx-datastore" }
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinx-binaryCompatibilityValidator = { module = "org.jetbrains.kotlinx:binary-compatibility-validator", version.ref = "binary-validator" }
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref="android-gradlePlugin" }
@@ -61,5 +70,6 @@ compose-material-icons-extended = { group = "androidx.compose.material", name = 
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 [plugins]
+cryptography = { id = "dev.whyoleg.cryptography", version.ref = "cryptography" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
