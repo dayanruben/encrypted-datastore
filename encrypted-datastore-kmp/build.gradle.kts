@@ -1,6 +1,8 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
+import kotlinx.validation.KotlinApiBuildTask
+import kotlinx.validation.KotlinApiCompareTask
 
 plugins {
     convention.library.kmp
@@ -9,6 +11,10 @@ plugins {
 }
 
 description = "Authenticated Kotlin Multiplatform DataStore for Android, JVM, iOS and macOS"
+
+mavenPublishing {
+    pom { description.set(project.description) }
+}
 
 cryptography {
     configureSwiftLinkerOpts = true
@@ -34,6 +40,7 @@ kotlin {
         commonMain.dependencies {
             api(libs.androidx.datastore.core.okio)
             api(libs.androidx.datastore.preferences.core)
+            api(libs.coroutines.core)
             implementation(libs.cryptography.core)
             implementation(libs.cryptography.provider.optimal)
         }
@@ -62,6 +69,31 @@ tasks.withType<KotlinNativeSimulatorTest>().configureEach {
     standalone.set(false)
     device.set(providers.gradleProperty("iosSimulatorDevice").orElse("booted"))
 }
+
+apiValidation {
+    @OptIn(kotlinx.validation.ExperimentalBCVApi::class)
+    klib { enabled = true }
+}
+
+// BCV 0.18.2 does not discover the new AGP KMP Android target automatically.
+// Use its public tasks over the actual Android compilation, including Keystore-only APIs.
+val androidMainCompilation = kotlin.targets.getByName("android").compilations.getByName("main")
+val androidApiBuild = tasks.register<KotlinApiBuildTask>("androidApiBuild") {
+    inputClassesDirs.from(androidMainCompilation.output.classesDirs)
+    inputDependencies.from(androidMainCompilation.compileDependencyFiles)
+    runtimeClasspath.from(tasks.named<KotlinApiBuildTask>("jvmApiBuild").map { it.runtimeClasspath })
+    outputApiFile.set(layout.buildDirectory.file("api/android/${project.name}.api"))
+}
+val androidApiCheck = tasks.register<KotlinApiCompareTask>("androidApiCheck") {
+    projectApiFile.set(layout.projectDirectory.file("api/android/${project.name}.api"))
+    generatedApiFile.set(androidApiBuild.flatMap { it.outputApiFile })
+}
+val androidApiDump = tasks.register<Copy>("androidApiDump") {
+    from(androidApiBuild.flatMap { it.outputApiFile })
+    into(layout.projectDirectory.dir("api/android"))
+}
+tasks.named("apiCheck") { dependsOn(androidApiCheck) }
+tasks.named("apiDump") { dependsOn(androidApiDump) }
 
 val benchmarkCompilation = kotlin.targets.getByName<KotlinJvmTarget>("jvm").compilations.getByName("test")
 tasks.register<JavaExec>("benchmark") {
