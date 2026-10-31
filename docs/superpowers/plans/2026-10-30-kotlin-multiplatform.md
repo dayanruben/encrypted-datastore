@@ -4,7 +4,7 @@
 
 **Goal:** Add a reliable, authenticated, bounded-memory DataStore API for Android, JVM, iOS, and macOS while preserving existing encrypted files and APIs.
 
-**Architecture:** Add `encrypted-datastore-kmp` with a common Okio serializer, upstream transactional factories, and a small cipher boundary backed by cryptography-kotlin. Android Keystore and Apple Keychain factories own platform key access. Keep the existing Tink modules and formats independent.
+**Architecture:** Add `encrypted-datastore-kmp` with a common bounded RecordSerializer with an Okio compatibility bridge, upstream transactional factories, and a small cipher boundary backed by cryptography-kotlin. Android Keystore and Apple Keychain factories own platform key access. Keep the existing Tink modules and formats independent.
 
 **Tech Stack:** Kotlin 2.4.21, Gradle 9.8.2, AGP 9.4.1, AndroidX DataStore 1.3.0, Okio 3.17.0, cryptography-kotlin 0.6.0, kotlin.test, kotlinx.coroutines.
 
@@ -17,7 +17,7 @@
 - Pin the new module's public coroutine runtime and test library to `1.11.0`.
 - New targets: Android, JVM, `iosArm64`, `iosSimulatorArm64`, and `macosArm64`; preserve legacy module targets and public signatures.
 - New APIs use package `com.dayanruben.datastore.encrypted.kmp` and explicit public types.
-- Plaintext defaults to at most `1_048_576` bytes; configurable limit is `1..16_777_216` bytes. Enforce limits while serializing/reading, before an unbounded allocation or cryptographic operation.
+- Accepted plaintext defaults to at most `1_048_576` bytes; configurable limit is `1..16_777_216` bytes. Enforce encrypted read limits and check every `RecordSerializer` write before adapter buffering/encryption. The Okio/Preferences compatibility bridge caps accepted records, not upstream buffering or private encoding allocations; caller inputs and serializer-private allocations remain outside the budget.
 - Require a nonblank stable `storeId` whose UTF-8 encoding is at most `1024` bytes. Bind the entire format header and store identity as associated authenticated data.
 - AES-256-GCM uses a `32` byte key, a fresh cryptographically random `12` byte nonce, and a `16` byte authentication tag for every write.
 - Never accept plaintext, attempt legacy decryption, recreate a missing persisted key, or replace encrypted content automatically after an encryption/authentication/key failure.
@@ -29,7 +29,7 @@
 - Existing zero-byte/truncated/wrong-version ciphertext must fail without overwriting or returning defaults (Task 2/3).
 - A prefix-only delegate must never receive bytes from ciphertext with a corrupt final tag (Task 2).
 - Locked, missing, duplicate, or replaced platform keys must never trigger key recreation or data deletion (Task 4/5).
-- Hostile unbounded sources and serializers must hit the byte limit before unbounded buffering or encryption (Task 2).
+- Hostile sources and RecordSerializer writes must hit the byte limit before unbounded adapter buffering or encryption. The Okio/Preferences bridge can buffer beyond the accepted-record limit (Task 2; final-review fix).
 - Concurrent/cancelled/failed updates and mutable Preferences must preserve transactional values and reopen correctly (Task 3).
 
 ---
@@ -39,6 +39,7 @@
 - `encrypted-datastore-kmp/build.gradle.kts`: new independently published KMP artifact, native hierarchy, device tests, benchmark task.
 - `encrypted-datastore-kmp/src/commonMain/kotlin/DataStoreCipher.kt`: cipher contract and raw-key factory backed by a native provider.
 - `encrypted-datastore-kmp/src/commonMain/kotlin/EncryptionException.kt`: non-destructive typed failures.
+- `encrypted-datastore-kmp/src/commonMain/kotlin/RecordSerializer.kt` and `RecordWriter.kt`: bounded sequential typed writer without mutable buffer access.
 - `encrypted-datastore-kmp/src/commonMain/kotlin/EncryptedOkioSerializer.kt`: versioned format, authenticated identity, limits, stream ownership.
 - `encrypted-datastore-kmp/src/commonMain/kotlin/EncryptedDataStoreFactory.kt`: typed/Preferences factories using public AndroidX storage.
 - `encrypted-datastore-kmp/src/commonJvmMain/kotlin/JcaDataStoreCipher.kt`: operation-local JCA cipher adapter for nonexportable keys.
@@ -80,7 +81,7 @@ All Gradle commands below run through the `gradle-run` skill's standalone compac
 
 **Files:** Create common `EncryptedDataStoreFactory.kt`, `commonTest/kotlin/EncryptedDataStoreTest.kt`, `commonTest/kotlin/EncryptedPreferencesDataStoreTest.kt`; add FakeFileSystem test dependency.
 
-**Interfaces:** Consumes Task 2 extension. Produces the two public factories from the spec, each requiring caller scope/path and accepting optional file system/migrations; typed factory additionally takes `OkioSerializer<T>`.
+**Interfaces:** Consumes Task 2 extension. Produces the two public factories from the spec, each requiring caller scope/path and accepting optional file system/migrations; typed factory takes `RecordSerializer<T>` or `OkioSerializer<T>` through overloads.
 
 - [x] **Step 1:** Write failing common integration tests with FakeFileSystem: update, cancel/join scope, reopen and read `"persisted"`; 100 concurrent increments return `100`; a failing transform, throwing serializer, cancelled update, and failed atomic move preserve the prior value on reopen; wrong key and empty existing file retain the same disk bytes; missing file returns default; relative path is rejected; Preferences persists Boolean/Int/Long/Float/Double/String/Set/ByteArray, freezes escaped mutable values, and rejects a path without `.preferences_pb`. Add a migration test from an initial value to a new schema value.
 - [x] **Step 2:** Run `./gradlew :encrypted-datastore-kmp:jvmTest --tests '*DataStoreTest*'`. Expected: absent factories fail compilation.
@@ -104,7 +105,7 @@ All Gradle commands below run through the `gradle-run` skill's standalone compac
 
 **Files:** Create `appleMain/kotlin/AppleKeychainCipher.kt`, `appleTest/kotlin/AppleKeychainCipherTest.kt`; add Native interop opt-ins locally.
 
-**Interfaces:** Consumes Task 1 raw-key factory. Produces `createAppleKeychainCipher(service: String, account: String)` and `openAppleKeychainCipher(service: String, account: String)`, both suspending and returning `DataStoreCipher`.
+**Interfaces:** Consumes Task 1 raw-key factory. Produces `createAppleKeychainCipher(service: String, account: String, accessGroup: String)` and `openAppleKeychainCipher(service: String, account: String, accessGroup: String)`, both suspending and returning `DataStoreCipher`.
 
 - [x] **Step 1:** Write failing Apple tests using unique service/account names and test-owned cleanup: create/encrypt/open/decrypt; duplicate create fails and original ciphertext still decrypts; missing open fails and creates no item; wrong-sized stored key fails; blank service/account fail. Test helpers, not production methods, delete test items.
 - [x] **Step 2:** Run `./gradlew :encrypted-datastore-kmp:macosArm64Test`. Expected: missing APIs fail compilation.
@@ -135,10 +136,14 @@ All Gradle commands below run through the `gradle-run` skill's standalone compac
 - [x] **Step 3:** Add Ubuntu tests/builds, macOS ARM64 host/simulator tests and physical-target compile, Android Keystore emulator tests, and change native publication runner to macOS ARM64. Keep release version checks and secret handling; no release is triggered.
 - [x] **Step 4:** Document real common typed/Preferences examples, explicit platform key create/open and lifecycle, stable storeId, limits, threat model, backup/rotation/manual migration, target matrix, release status, and exact local/CI evidence. Mark the new module as unreleased; leave the released coordinates/version untouched. Document benchmarks as host measurements and untested device/key-lock behavior honestly.
 - [x] **Step 5:** Run `./gradlew check :sample:assembleDebug :security-crypto-datastore:assembleRelease :security-crypto-datastore-preferences:assembleRelease :encrypted-datastore-kmp:assemble :encrypted-datastore-kmp:iosSimulatorArm64Test :encrypted-datastore-kmp:macosArm64Test`. Expected: all available target tests, API/lint/build gates pass; inspect JUnit summaries and run `git diff --check` and metadata checks. Reuse successful unchanged focused results rather than repeating tests without a reason.
-- [ ] **Step 6:** Commit distinct benchmark, build/CI, and docs changes separately. Request the executing-plans skill's one fresh whole-branch review, address important findings with failing regressions and passing suites, record any remaining limits, and leave the branch/worktree available for the user.
+- [x] **Step 6:** Commit distinct benchmark, build/CI, and docs changes separately. Request the executing-plans skill's one fresh whole-branch review, address important findings with failing regressions and passing suites, record any remaining limits, and leave the branch/worktree available for the user.
 
 ## Self-review and execution authorization
 
 All fixed constraints map to Tasks 1–7. Review Focus maps to the stated negative/integration tests. Method names, exception types, layouts, limits, target names, and factory ownership agree with the spec. The platform key managers are separate reviewable tasks; the common serializer/factories share one specified contract. The new module keeps unrelated legacy API internals out of the native graph. Exact native/device behavior and benchmark numbers are evidence to collect during execution, not assumed results.
 
 Execution method: the user explicitly selected `superpowers:executing-plans` and requested execution immediately after writing. Proceed inline without a separate approval pause. Do not merge, push, or publish. A fresh whole-branch review is required at the end.
+
+## Final review corrections
+
+The one fresh whole-branch review found two important issues. The final API adds `RecordSerializer`/`RecordWriter` because Okio's sealed `BufferedSink` cannot enforce a pre-buffering cap for arbitrary bulk/direct-buffer writes. The compatibility bridge and Preferences document their accepted-record limit separately. Regression tests cover bulk bytes/UTF-8, allocation before rejection, swallowed limit failures, direct buffer access, and JVM stream/ByteBuffer/charset compatibility. Apple create/open now require the exact entitled access group; two-group simulator regressions cover wrong-group lookup and equal service/account identities in separate groups. Both defects were reproduced by failing tests before their fixes.

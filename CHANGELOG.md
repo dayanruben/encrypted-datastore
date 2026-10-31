@@ -3,9 +3,9 @@
 ### Multiplatform
 
 - Add `encrypted-datastore-kmp` for Android, JVM, iOS ARM64/simulator, and macOS ARM64, preserving existing coordinates and ciphertext formats.
-- Add authenticated AES-256-GCM Okio serialization, stable store identity binding, bounded records, and typed failures that do not trigger corruption replacement.
-- Add typed and Preferences factories using public AndroidX APIs and caller-owned coroutine scopes.
-- Add explicit Android Keystore and Apple device-only Keychain creation/opening, plus JVM key import.
+- Add authenticated AES-256-GCM Okio serialization, stable store identity binding, bounded typed writes, and typed failures that do not trigger corruption replacement.
+- Add RecordSerializer/RecordWriter for writes checked before buffering, an Okio compatibility bridge, and typed/Preferences factories using public AndroidX APIs and caller-owned coroutine scopes. The compatibility bridge limits accepted records without capping upstream encoding/buffering allocations.
+- Add explicit Android Keystore and Apple device-only Keychain creation/opening bound to an explicit entitled access group, plus JVM key import.
 - Add JVM/native/Android integration suites, Android and Native API gates, an opt-in benchmark, native CI, and Apple-hosted complete KMP publication.
 
 ### Fixes

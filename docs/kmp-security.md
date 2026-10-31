@@ -4,20 +4,18 @@
 
 ## Shared typed and Preferences storage
 
-All new API declarations use `com.dayanruben.datastore.encrypted.kmp`. An application supplies an immutable `OkioSerializer<T>`, a persisted cipher, a stable store identity, an absolute private path, and a background coroutine scope. The default file system resolves to the platform system file system; tests and specialized applications can supply another `FileSystem`.
+All new API declarations use `com.dayanruben.datastore.encrypted.kmp`. An application supplies a `RecordSerializer<T>` for an immutable value, a persisted cipher, a stable store identity, an absolute private path, and a background coroutine scope. The default file system resolves to the platform system file system; tests and specialized applications can supply another `FileSystem`.
 
 ```kotlin
-import androidx.datastore.core.okio.OkioSerializer
 import com.dayanruben.datastore.encrypted.kmp.*
 import kotlinx.coroutines.CoroutineScope
-import okio.BufferedSink
 import okio.BufferedSource
 import okio.Path
 
-object SettingsSerializer : OkioSerializer<String> {
+object SettingsSerializer : RecordSerializer<String> {
     override val defaultValue = "system"
     override suspend fun readFrom(source: BufferedSource) = source.readUtf8()
-    override suspend fun writeTo(t: String, sink: BufferedSink) { sink.writeUtf8(t) }
+    override suspend fun writeTo(t: String, writer: RecordWriter) { writer.writeUtf8(t) }
 }
 
 fun typedSettings(cipher: DataStoreCipher, path: Path, scope: CoroutineScope) =
@@ -41,7 +39,7 @@ fun preferences(cipher: DataStoreCipher, path: Path, scope: CoroutineScope) =
 
 Use one active DataStore per file, in one process. Keep the scope alive for the store's lifetime; cancel and join its Job before opening another instance. Paths are normalized and must be absolute. Do not use multiple symlink/hardlink aliases for the same store. Upstream AndroidX owns the actor, migration ordering, cached values, file synchronization, and atomic replacement. Preferences uses its public factory so values cannot be mutated outside `edit`/`updateData` transactions. Migrations are explicit `List<DataMigration<T>>` arguments, with AndroidX's retry/idempotency contract.
 
-For custom storage, wrap a public serializer directly with `serializer.encrypted(cipher, storeId, maxPlaintextBytes)` and supply it to `OkioStorage`. No AndroidX internal declarations or friend-path tricks are used in the new module.
+For custom storage, wrap either a `RecordSerializer` or an existing AndroidX `OkioSerializer` directly with `serializer.encrypted(cipher, storeId, maxPlaintextBytes)` and supply it to `OkioStorage`. No AndroidX internal declarations or friend-path tricks are used in the new module.
 
 ## Platform keys
 
@@ -50,12 +48,12 @@ Provisioning and opening are separate operations. Call a create function only du
 | Platform | Provision | Reopen | Storage contract |
 | --- | --- | --- | --- |
 | Android | `createAndroidKeystoreCipher(alias)` | `openAndroidKeystoreCipher(alias)` | Nonexportable AES-256-GCM key; randomized encryption required; existing size/purposes/modes/padding validated |
-| iOS/macOS | `createAppleKeychainCipher(service, account)` | `openAppleKeychainCipher(service, account)` | Generic-password item in data-protection Keychain; WhenUnlockedThisDeviceOnly; synchronization disabled |
+| iOS/macOS | `createAppleKeychainCipher(service, account, accessGroup)` | `openAppleKeychainCipher(service, account, accessGroup)` | Generic-password item in data-protection Keychain; WhenUnlockedThisDeviceOnly; synchronization disabled |
 | JVM | Provision through your OS vault/KMS/secret manager | `aesGcmCipher(keyFromSecureStorage)` | Imports exactly 32 bytes; this library never persists raw JVM keys |
 
 Android provisioning is serialized within the process. If multiple processes can provision the same alias, coordinate that lifecycle outside this API. Keystore operations use `Dispatchers.IO`; hardware/StrongBox and biometric requirements are not implied.
 
-Apple applications need valid Keychain entitlements. Keychain lock, unavailable service, missing entitlement, duplicate item, and missing key return `KeyStorageException`; its nullable `status` contains the OSStatus when one exists. The adapter requests failure rather than an authentication prompt while opening. It never falls back to the legacy macOS Keychain. The native AES key lives in process memory after import; it is not Secure Enclave-backed AES. Configure these platform helpers inside a Kotlin application facade if exporting a framework to Swift; a direct Swift SDK surface is not part of this module's distribution contract.
+Apple applications must supply an explicit, nonblank `accessGroup` matching their entitlements, including the signing prefix (for example, the team identifier). Creation and lookup both bind the exact service/account/group tuple. The same service/account in another entitled group is a separate key and is never searched as a fallback. [Apple documents that an omitted group defaults differently for creation and lookup](https://developer.apple.com/documentation/security/ksecattraccessgroup); this API requires the group to avoid that ambiguity. Keychain lock, unavailable service, missing entitlement, duplicate item, and missing key return `KeyStorageException`; its nullable `status` contains the OSStatus when one exists. The adapter requests failure rather than an authentication prompt while opening. It never falls back to the legacy macOS Keychain. The native AES key lives in process memory after import; it is not Secure Enclave-backed AES. Configure these platform helpers inside a Kotlin application facade if exporting a framework to Swift; a direct Swift SDK surface is not part of this module's distribution contract.
 
 Raw keys and public cipher inputs remain caller-owned. Import copies the key without modifying the caller's array. Keep raw secrets out of source code, preferences, adjacent files, logs, and backups. Reuse a cipher wrapper per store lifetime; operation objects are not shared between calls. Temporary owned arrays are cleared best-effort, but runtime/provider copies and pooled buffers prevent a guaranteed zeroization claim. A custom `DataStoreCipher` implementation is trusted security code and must honor the documented AES-256-GCM layout, concurrent safety, input ownership, and full authentication contract.
 
@@ -65,7 +63,11 @@ Version 1 is `45 44 53 4b | 01 | 01 | nonce(12) | ciphertext | tag(16)`. The six
 
 AAD is `header | UTF8(storeId).size as UInt32 big endian | UTF8(storeId)`. Store identities must be nonblank and at most 1024 UTF-8 bytes. Use a stable logical identity scoped to the appropriate store/account. Reusing one key and one identity across unrelated stores permits swapping their valid records. Changing the identity prevents reading existing ciphertext, including when renaming a file; moving a file while preserving its logical identity works.
 
-Serialized plaintext defaults to at most 1,048,576 bytes. A custom `maxPlaintextBytes` must be in `1..16_777_216`. The reader consumes at most that limit plus 34 record bytes plus one sentinel. Okio can prefetch one additional 8192-byte segment into the caller's buffered source. Serialization uses a bounded sink, so an unbounded serializer cannot grow this adapter's memory without limit. A complete bounded ciphertext is authenticated before the delegate can read even its first plaintext byte. The adapter does not close caller-owned sources/sinks.
+Serialized plaintext defaults to at most 1,048,576 bytes. A custom `maxPlaintextBytes` must be in `1..16_777_216`. The reader consumes at most that limit plus 34 record bytes plus one sentinel. Okio can prefetch one additional 8192-byte segment into the caller's buffered source. `RecordSerializer` writes through `RecordWriter`: byte-array slices and UTF-8 strings are checked before copying or encoding into the adapter buffer. The writer exposes remaining capacity without exposing its mutable buffer. A rejected write permanently fails that record, even if the delegate catches the exception. Caller-owned inputs and private serializer allocations remain outside this budget.
+
+The compatibility overload for `OkioSerializer`, including the upstream Preferences serializer, bounds accepted records and encrypted reads. Its bulk writes, direct buffer access, and private encoding can allocate beyond the record limit before rejection. It does not provide a write-memory cap. Bound application preference values before storing them, or use `RecordSerializer` when bounded adapter writes are required.
+
+A complete bounded ciphertext is authenticated before the delegate can read even its first plaintext byte. The adapter does not close caller-owned sources/sinks.
 
 This design holds a complete settings record in memory and makes copies during provider/Okio conversion. It is intended for small settings; retain the legacy Tink streaming API for large files. The benchmark reports allocation volume and latency rather than claiming streaming memory usage or device performance.
 
