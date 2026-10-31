@@ -11,6 +11,11 @@ cryptography {
 }
 
 kotlin {
+    android {
+        withDeviceTestBuilder { sourceSetTreeName = "test" }.configure {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+    }
     iosArm64()
     iosSimulatorArm64()
     macosArm64()
@@ -29,6 +34,10 @@ kotlin {
         }
         commonJvmTest.dependencies {
             implementation(kotlin("test-junit5"))
+        }
+        named("androidDeviceTest").dependencies {
+            implementation(kotlin("test-junit"))
+            implementation(libs.androidx.test.runner)
         }
         val appleMain = create("appleMain") { dependsOn(commonMain.get()) }
         val appleTest = create("appleTest") { dependsOn(commonTest.get()) }
